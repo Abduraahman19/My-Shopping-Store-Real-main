@@ -88,9 +88,9 @@ const Navbar: React.FC<NavbarProps> = ({ handleShow }) => {
   }, []);
 
   return (
-    <nav className={`fixed left-1/2 transform -translate-x-1/2 w-[98%] md:w-[90%] z-50 transition-all ${hasScrolled ? "bg-white shadow-md rounded-b-2xl" : "bg-transparent"}`}>
+    <nav className={`fixed left-1/2 transform -translate-x-1/2 w-[98%] mt-2 mb-2 md:w-[90%] z-50 transition-all ${hasScrolled ? "bg-white shadow-md rounded-2xl" : "bg-transparent"}`}>
       <div className="flex items-center justify-between px-8 py-2">
-        <Link to="/" className="text-4xl text-gray-800">My Shopping Store</Link>
+        <Link to="/" className="text-5xl text-gray-800">My Shopping Store</Link>
 
         <ul className="hidden md:flex space-x-8">
           {navData.map((option) => (

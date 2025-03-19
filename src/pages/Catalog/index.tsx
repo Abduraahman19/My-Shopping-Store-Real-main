@@ -65,9 +65,9 @@ const Catalog = () => {
     <div className="main-container py-32 md:py-40">
       <div className="flex gap-4">
         <Button className="flex items-center justify-center bg-transparent" onClick={() => navigate(-1)}>
-          <MdArrowBack className="text-2xl mt-1 md:text-6xl text-title" />
+          <MdArrowBack className="text-2xl font-extrabold mt-1 text-orange-600 md:text-6xl text-title" />
         </Button>
-        <div className="flex items-center font-bold text-2xl tracking-wide text-title md:justify-center md:text-6xl">
+        <div className="flex text-orange-600 items-center text-2xl tracking-wide text-title md:justify-center md:text-6xl">
           {convertedString}
         </div>
       </div>
