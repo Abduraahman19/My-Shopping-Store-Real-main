@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, useEffect } from "react";
 import { Link } from "react-router-dom";
 import styles from "./index.module.scss";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
@@ -6,6 +6,7 @@ import {
   incrementItemFromCart,
   reduceItemFromCart,
   removeItemFromCart,
+  syncWithLocalStorage,
 } from "../../../features/cart/cartSlice";
 import { MdDelete } from "react-icons/md";
 import Button from "../../../components/components/Button";
@@ -21,6 +22,11 @@ const CartProduct: FC<CartProps> = ({ item, onClick }) => {
   const { isLoading } = useAppSelector((state) => state.cart);
   const dispatch = useAppDispatch();
 
+  useEffect(() => {
+    // Sync cart with localStorage on app initialization
+    dispatch(syncWithLocalStorage());
+  }, [dispatch]);
+
   if (isLoading) return <Spinner />;
 
   return (
@@ -31,12 +37,18 @@ const CartProduct: FC<CartProps> = ({ item, onClick }) => {
         onClick={onClick}
       >
         <div>
-          <img src={item.product.image} alt={item.product.title} className="w-52 rounded-2xl"/>
+          <img
+            src={item.product.image}
+            alt={item.product.title}
+            className="w-52 rounded-2xl"
+          />
         </div>
         <div className={styles.cartCardDetails}>
           <div className={styles.cartCardLeft}>
-            <div className='text-3xl w-screen max-w-64'>{item.product.title}</div>
-            <div className='mt-16 text-3xl font-extrabold'>Rs {item.product.price}</div>
+            <div className="text-3xl w-screen max-w-64">{item.product.title}</div>
+            <div className="mt-16 text-3xl font-extrabold">
+              Rs {item.product.price}
+            </div>
           </div>
         </div>
       </Link>
@@ -44,7 +56,6 @@ const CartProduct: FC<CartProps> = ({ item, onClick }) => {
         <div className={styles.cartCardRightWrapper}>
           <Button
             className={styles.button}
-            // disabled={item.quantity < 2}
             onClick={() => dispatch(reduceItemFromCart(item.product))}
           >
             -
@@ -58,7 +69,7 @@ const CartProduct: FC<CartProps> = ({ item, onClick }) => {
           </Button>
         </div>
         <Button
-          className='text-5xl ml-28 hover:text-red-500'
+          className="text-5xl ml-28 hover:text-red-500"
           onClick={() => dispatch(removeItemFromCart(item.product.id))}
         >
           <MdDelete className={styles.icon} />

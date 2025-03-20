@@ -3,7 +3,6 @@ import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import styles from "./index.module.scss";
 import Button from "../../components/components/Button";
 import {
-  cartReset,
   incrementItemFromCart,
   reduceItemFromCart,
   removeItemFromCart,
@@ -12,6 +11,7 @@ import { MdArrowBack, MdCheck, MdDelete } from "react-icons/md";
 import { BiPurchaseTag } from "react-icons/bi";
 import { TbTruckReturn } from "react-icons/tb";
 import Spinner from "../../components/components/Spinner";
+import OrderPopup from "../../components/components/orderPopup";
 
 const Cart = () => {
   const { cartItems, isLoading } = useAppSelector(
@@ -40,12 +40,6 @@ const Cart = () => {
         {cartItems.length ? (
           <div className={styles.content}>
             <div className={styles.cartLeft}>
-              <div
-                className={styles.emptyCart}
-                onClick={() => dispatch(cartReset())}
-              >
-                Empty Cart
-              </div>
               {cartItems.map((item) => {
                 return (
                   <div className={styles.cartCardWrapper}>
@@ -147,21 +141,21 @@ const Cart = () => {
               <div className={styles.totalContent}>
                 <div className="flex flex-col items-center gap-4 justify-center">
                   <div className="flex items-center gap-4 justify-center">
-                  <div>
-                    <div className={styles.title}>Total Amount</div>
-                  </div>
-                  <div className="mt-[-14px] text-3xl">Rs {totalPrice.toFixed(2)}</div>
+                    <div>
+                      <div className={styles.title}>Total Amount</div>
+                    </div>
+                    <div className="mt-[-14px] text-3xl">Rs {totalPrice.toFixed(2)}</div>
                   </div>
                   <Link
                     to="/catalog/All"
                     className="text-2xl mt-[-20px] underline hover:text-orange-600">
                     Continue Shopping
                   </Link>
-                  <Button className='bg-orange-600 py-5 px-28 rounded-full hover:text-white text-[#b4b2b2]'>Place Order</Button>
+                  <OrderPopup/>
                 </div>
               </div>
             </div>
-          </div>  
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-[40vh]">
             <div className='text-7xl'>No Items Here</div>
