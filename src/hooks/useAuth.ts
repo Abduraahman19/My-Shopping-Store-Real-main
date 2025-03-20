@@ -19,5 +19,5 @@ export const useAuth = () => {
 
   useEffect(() => {
     user && initUser(Number(user));
-  }, []); // eslint-disable-line
+  }, []);
 };

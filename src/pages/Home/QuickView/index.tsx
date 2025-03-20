@@ -8,7 +8,7 @@ import { navData } from "../../../data/navItems";
 interface Product {
   id: number;
   _id: string;
-  name: string; // Changed from title to name
+  name: string; 
   price: number;
   category: string;
   description: string;
@@ -27,7 +27,7 @@ const QuickView = () => {
         const response = await fetch("http://localhost:5000/api/products");
         const data = await response.json();
         setProducts(data);
-        setFilteredProducts(data); // Initialize filteredProducts with all products
+        setFilteredProducts(data); 
       } catch (error) {
         console.error("Error fetching products:", error);
       }
@@ -85,7 +85,7 @@ const QuickView = () => {
             <ProductCard
               key={product.id}
               id={product._id}
-              title={product.name} // Changed
+              title={product.name} 
               price={product.price}
               description={product.description}
               image={product.image}

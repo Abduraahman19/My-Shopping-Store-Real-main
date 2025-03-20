@@ -71,7 +71,7 @@ const Navbar: React.FC<NavbarProps> = ({ handleShow }) => {
 
   const handleProductClick = (id: string) => {
     navigate(`/products/${id}`);
-    setIsSearchBarVisible(false); // Hide search bar after navigation
+    setIsSearchBarVisible(false); 
   };
 
   useEffect(() => {

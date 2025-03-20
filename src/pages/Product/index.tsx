@@ -98,7 +98,7 @@ const Product = () => {
     setTimeout(() => {
       saveToLocalStorage(cartProduct);
       setIsLoadingProduct(false);
-    }, 1500); // Added 1.5 sec lag for better UX
+    }, 1500);
   };
 
   const route = [

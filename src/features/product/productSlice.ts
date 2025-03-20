@@ -16,7 +16,6 @@ interface ProductState {
 const initialState: ProductState = {
   products: [],
   product: {
-    category: "",
     description: "",
     id: 0,
     image: "",

@@ -6,10 +6,9 @@ import Spinner from "../../components/components/Spinner";
 import GoToTop from "../../components/components/GoToTop";
 import Button from "../../components/components/Button";
 
-// Product type definition
 interface Product {
   id: number;
-  _id: string;  // Added _id to match the structure in QuickView
+  _id: string;  
   name: string;
   price: number;
   category: string;
@@ -76,7 +75,7 @@ const Catalog = () => {
         {products.map((product) => (
           <ProductCard
             key={product.id}
-            id={product._id}  // Changed to use _id instead of id
+            id={product._id}
             title={product.name}
             price={product.price}
             description={product.description}

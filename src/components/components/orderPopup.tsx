@@ -9,10 +9,10 @@ const OrderPopup = () => {
     const dispatch = useAppDispatch();
 
     const handleClose = () => {
-        dispatch(cartReset());                   // Clear Redux cart
-        localStorage.removeItem("cart");         // Clear local storage
-        console.log("Cart cleared!");            // Debug log
-        setOpen(false);                          // Close dialog
+        dispatch(cartReset());                  
+        localStorage.removeItem("cart");         
+        console.log("Cart cleared!");           
+        setOpen(false);                          
     };
 
     return (

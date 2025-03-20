@@ -23,7 +23,6 @@ const CartProduct: FC<CartProps> = ({ item, onClick }) => {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    // Sync cart with localStorage on app initialization
     dispatch(syncWithLocalStorage());
   }, [dispatch]);
 
