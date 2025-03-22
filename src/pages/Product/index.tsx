@@ -162,12 +162,10 @@ const Product = () => {
             </AnimatePresence>
 
             <div className="flex flex-col max-w-[600px] mt-10 gap-8">
-              <h1 className="text-4xl md:text-6xl uppercase text-gray-800">
+            <h1 className="md:text-4xl text-2xl text-gray-700">Title:</h1>
+              <h1 className="text-3xl md:text-5xl mt-[-10px] mb-5 uppercase text-gray-800">
                 {product.name}
               </h1>
-              <p className="text-2xl md:text-4xl font-extrabold text-gray-600 mt-2">
-                {product.description}
-              </p>
               <div className="flex items-center gap-4">
                 <h2 className="text-4xl text-gray-700">Price:</h2>
                 <p className="text-3xl font-extrabold text-gray-800">
@@ -190,6 +188,10 @@ const Product = () => {
                   Continue Shopping
                 </Link>
               </div>
+              <h2 className="text-4xl mt-4 text-gray-700">Description:</h2>
+              <p className="text-2xl md:text-4xl font-extrabold text-gray-600 ">
+                {product.description}
+              </p>
             </div>
           </div>
         )}
