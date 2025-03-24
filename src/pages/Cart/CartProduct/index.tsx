@@ -45,8 +45,11 @@ const CartProduct: FC<CartProps> = ({ item, onClick }) => {
         <div className={styles.cartCardDetails}>
           <div className={styles.cartCardLeft}>
             <div className="text-3xl w-screen max-w-64">{item.product.title}</div>
-            <div className="mt-16 text-3xl font-extrabold">
-              Rs {item.product.price}
+            <div className="mt-16 w-[150px] text-[15px]">
+                Rs. {new Intl.NumberFormat("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                }).format(item.product.price)}
             </div>
           </div>
         </div>

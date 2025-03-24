@@ -58,7 +58,10 @@ const Cart = () => {
                             {item.product.title}
                           </div>
                           <div className='text-4xl w-screen max-w-80 mb-10'>
-                            Rs {item.product.price}
+                            Rs. {new Intl.NumberFormat("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2
+                            }).format(item.product.price)}
                           </div>
                           <div className='w-screen flex gap-2 font-bold text-4xl'>
                             <div className={styles.iconContainer}>
@@ -144,14 +147,17 @@ const Cart = () => {
                     <div>
                       <div className={styles.title}>Total Amount</div>
                     </div>
-                    <div className="mt-[-14px] text-3xl">Rs {totalPrice.toFixed(2)}</div>
+                    <div className="mt-[-14px] text-3xl">Rs. {new Intl.NumberFormat("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    }).format(totalPrice)}</div>
                   </div>
                   <Link
                     to="/catalog/All"
                     className="text-2xl mt-[-20px] underline hover:text-orange-600">
                     Continue Shopping
                   </Link>
-                  <OrderPopup/>
+                  <OrderPopup />
                 </div>
               </div>
             </div>

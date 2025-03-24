@@ -93,7 +93,12 @@ const ProductCard: FC<ProductCardProps> = ({
           <h3 className="font-poppins font-bold text-3xl mb-1 leading-6 overflow-hidden overflow-ellipsis line-clamp-2">
             {title}
           </h3>
-          <p className="font-poppins font-bold text-neutral-700 mb-1">Rs {price}</p>
+          <p className="font-poppins font-bold text-neutral-700 mb-1">               
+            Rs. {new Intl.NumberFormat("en-US", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          }).format(price)}
+          </p>
         </Link>
 
         <motion.button

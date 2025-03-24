@@ -30,19 +30,37 @@ const OrderPopup = () => {
         country: "",
     };
 
+    interface CartItem {
+        product: {
+            id: string;
+            image: string;
+            title: string;
+            price: number;
+        };
+        quantity: number;
+    }
+
+    interface CartProps {
+        cartItems: CartItem[];
+        totalAmount: number;
+    }
+
     const [formData, setFormData] = useState(initialFormState);
 
     const dispatch = useAppDispatch();
-    const cart = useAppSelector((state) => state.cart.items) || [];
-    const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const cartItems = useAppSelector((state) => state.cart.cartItems) || [];
 
-    // Fetch countries on mount
+    const totalAmount = cartItems.reduce(
+        (sum, item) => sum + item.product.price * item.quantity,
+        0
+    );
+
     useEffect(() => {
         const fetchCountries = async () => {
             try {
                 const response = await fetch("https://countriesnow.space/api/v0.1/countries/flag/images");
                 const data = await response.json();
-                if (data && data.data) {
+                if (data?.data) {
                     setCountries(data.data);
                 }
             } catch (error) {
@@ -52,29 +70,25 @@ const OrderPopup = () => {
         fetchCountries();
     }, []);
 
-    // Open popup and reset form
     const openPopup = () => {
         setFormData(initialFormState);
         setStep(1);
         setOpen(true);
     };
 
-    // Close popup: Empty cart only if order is confirmed (Step 4)
     const handleClose = () => {
         if (step === 4) {
-            dispatch(cartReset()); // Empty cart on successful order
-            localStorage.removeItem("cart"); // Clear localStorage
+            dispatch(cartReset());
+            localStorage.removeItem("cart");
         }
         setOpen(false);
-        setStep(1); // Reset step to the beginning
+        setStep(1);
     };
 
-    // Update form fields
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // Confirm order and move to final step
     const confirmOrder = () => {
         setStep(4);
     };
@@ -88,49 +102,80 @@ const OrderPopup = () => {
                 Place Order
             </button>
 
-            <Dialog
-                open={open}
-                onClose={handleClose} // Close on backdrop click
-                maxWidth="sm"
-                fullWidth
-            >
+            <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
                 <div className="bg-[#FEEBF8] text-white pl-5 flex justify-between items-center">
                     <h2 className="text-5xl text-[#ADADAD] py-5">
-                        {step === 1
-                            ? "Order Summary"
-                            : step === 2
-                            ? "User Information"
-                            : step === 3
-                            ? "Shipping & Payment"
-                            : "Order Confirmation"}
+                        {step === 1 ? "Order Summary" : step === 2 ? "User Information" : step === 3 ? "Shipping & Payment" : "Order Confirmation"}
                     </h2>
-
-                    <div
-                        onClick={handleClose}
-                        className="hover:bg-red-600 cursor-pointer transition duration-300 h-24 w-24 flex items-center justify-center"
-                    >
+                    <div onClick={handleClose} className="hover:bg-red-600 cursor-pointer transition duration-300 h-24 w-24 flex items-center justify-center">
                         <AiOutlineClose className="text-4xl" />
                     </div>
                 </div>
 
                 <DialogContent className="bg-gray-50 text-gray-800">
-                    {/* Step 1: Order Summary */}
                     {step === 1 && (
-                        <div>
-                            <h3 className="text-4xl mb-4">Your Cart Items:</h3>
-                            {cart.map((item) => (
-                                <p key={item.id} className="text-2xl">
-                                    {item.name} - {item.quantity} x ${item.price}
-                                </p>
-                            ))}
-                            <h3 className="text-4xl mt-8">Total: Rs {totalAmount.toFixed(2)}</h3>
+                        <div className="p-8 bg-gray-50 rounded-xl shadow-xl">
+                            <h2 className="text-5xl font-bold mb-8">Your Cart</h2>
+
+                            {cartItems.length === 0 ? (
+                                <p className="text-3xl text-gray-600">Your cart is empty.</p>
+                            ) : (
+                                <>
+                                    {cartItems.map((item, index) => (
+                                        <div
+                                            key={item.product.id}
+                                            className="flex items-center gap-6 mb-6 p-6 border rounded-lg shadow-md bg-white"
+                                        >
+                                            <span className="text-3xl font-semibold">{index + 1}.</span>
+                                            <img
+                                                src={item.product.image}
+                                                alt={item.product.title}
+                                                className="w-24 h-24 object-cover rounded-lg"
+                                            />
+
+                                            <div className="flex-1">
+                                                <p className="text-3xl font-semibold mb-2">{item.product.title}</p>
+                                                <p className="text-2xl text-gray-700">Quantity: {item.quantity}</p>
+                                                <p className="text-2xl text-gray-700">Price: Rs    Rs. {new Intl.NumberFormat("en-US", {
+                                                    minimumFractionDigits: 2,
+                                                    maximumFractionDigits: 2,
+                                                }).format(item.product.price)}</p>
+                                                <p className="text-2xl font-bold text-gray-900 mt-2">
+                                                    Subtotal: Rs {(item.quantity * item.product.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    <div className="mt-12 border-t pt-8">
+                                        <h3 className="text-4xl font-extrabold mb-6">Total Amount:</h3>
+                                        <p className="text-5xl text-green-600 font-bold">
+                                            Rs. {new Intl.NumberFormat("en-US", {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            }).format(totalAmount)}
+                                        </p>
+                                    </div>
+
+                                    <div className="mt-12">
+                                        <h4 className="text-4xl font-bold mb-4">Cart Summary:</h4>
+                                        <ul className="list-disc ml-8 space-y-4">
+                                            {cartItems.map((item, index) => (
+                                                <li key={item.product.id} className="text-2xl text-gray-800">
+                                                    <strong>Product {index + 1}:</strong> {item.product.title} - {item.quantity} pcs @ Rs {item.product.price.toFixed(2)} each
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     )}
 
-                    {/* Step 2: User Information */}
                     {step === 2 && (
                         <div>
-                            <h3 className="text-4xl mb-4">Enter Your Information:</h3>
+                            <h3 className="text-5xl mb-6">Enter Your Information:</h3>
+
                             {Object.keys(initialFormState).slice(0, 6).map((field) => (
                                 <TextField
                                     key={field}
@@ -140,35 +185,41 @@ const OrderPopup = () => {
                                     margin="normal"
                                     value={formData[field]}
                                     onChange={handleInputChange}
-                                    style={{ fontWeight: "bold", fontSize: "1.5rem" }}
+                                    InputProps={{
+                                        style: { fontSize: "1.7rem", fontWeight: "unset" },
+                                    }}
+                                    InputLabelProps={{
+                                        style: { fontSize: "1.7rem" },
+                                    }}
                                 />
                             ))}
+
                             <FormControl fullWidth margin="normal">
-                                <InputLabel>Country</InputLabel>
+                                <InputLabel style={{ fontSize: "1.5rem" }}>Country</InputLabel>
                                 <Select
                                     name="country"
                                     value={formData.country}
                                     onChange={handleInputChange}
+                                    style={{ fontSize: "1.7rem", fontWeight: "unset" }}
                                 >
                                     {countries.map((country) => (
-                                        <MenuItem key={country.name} value={country.name}>
+                                        <MenuItem key={country.name} value={country.name} style={{ fontSize: "1.8rem", fontWeight: "unset" }}>
                                             <img
                                                 src={country.flag}
                                                 alt={country.name}
-                                                style={{ width: "30px", marginRight: "10px" }}
+                                                style={{ width: "35px", marginRight: "15px" }}
                                             />
-                                            <div className="text-3xl font-extrabold">{country.name}</div>
+                                            {country.name}
                                         </MenuItem>
                                     ))}
                                 </Select>
                             </FormControl>
                         </div>
                     )}
-
-                    {/* Step 3: Shipping & Payment */}
                     {step === 3 && (
                         <div className="space-y-10">
-                            <h3 className="text-4xl">Select Shipping and Payment Method:</h3>
+                            <h3 className="text-5xl mb-6">Select Shipping and Payment Method:</h3>
+
                             <TextField
                                 select
                                 label="Shipping Method"
@@ -176,10 +227,17 @@ const OrderPopup = () => {
                                 fullWidth
                                 value={formData.shippingMethod}
                                 onChange={handleInputChange}
+                                InputProps={{
+                                    style: { fontSize: "1.5rem" },
+                                }}
+                                InputLabelProps={{
+                                    style: { fontSize: "1.5rem" },
+                                }}
                             >
-                                <MenuItem value="Standard">Standard</MenuItem>
-                                <MenuItem value="Express">Express</MenuItem>
+                                <MenuItem value="Standard" style={{ fontSize: "1.5rem" }}>Standard</MenuItem>
+                                <MenuItem value="Express" style={{ fontSize: "1.5rem" }}>Express</MenuItem>
                             </TextField>
+
                             <TextField
                                 select
                                 label="Payment Method"
@@ -187,55 +245,38 @@ const OrderPopup = () => {
                                 fullWidth
                                 value={formData.paymentMethod}
                                 onChange={handleInputChange}
+                                InputProps={{
+                                    style: { fontSize: "1.5rem" },
+                                }}
+                                InputLabelProps={{
+                                    style: { fontSize: "1.5rem" },
+                                }}
                             >
-                                <MenuItem value="Card">Card</MenuItem>
-                                <MenuItem value="Cash on Delivery">Cash on Delivery</MenuItem>
+                                <MenuItem value="Card" style={{ fontSize: "1.5rem" }}>Card</MenuItem>
+                                <MenuItem value="Cash on Delivery" style={{ fontSize: "1.5rem" }}>Cash on Delivery</MenuItem>
                             </TextField>
                         </div>
                     )}
 
-                    {/* Step 4: Confirmation */}
                     {step === 4 && (
-                        <div className="text-center text-4xl font-bold text-green-600">
-                            <p>Your order has been placed successfully! 🎉</p>
-                            <p>Thank you for shopping with us.</p>
+                        <div className="flex flex-col items-center justify-center text-center p-8">
+                            <h3 className="text-6xl font-extrabold text-green-600 mb-6">Order Confirmed! 🎉</h3>
+                            <p className="text-2xl text-gray-700 mb-4">Thank you for your purchase. Your order has been successfully placed.</p>
+                            <p className="text-xl text-gray-500">We'll notify you once your items are on the way.</p>
                         </div>
                     )}
                 </DialogContent>
 
                 <DialogActions className="bg-gray-100 px-5 py-3">
-                    {/* Back Button (Step > 1 and < 4) */}
                     {step > 1 && step < 4 && (
-                        <button
-                            onClick={() => setStep(step - 1)}
-                            className="text-4xl py-4 bg-black rounded-full px-8 hover:text-orange-700 text-orange-600"
-                        >
-                            Back
-                        </button>
+                        <button onClick={() => setStep(step - 1)} className="text-4xl bg-black text-orange-600 rounded-full py-4 px-8">Back</button>
                     )}
-
-                    {/* Next/Confirm/Close Button */}
-                    {step === 3 ? (
-                        <button
-                            onClick={confirmOrder}
-                            className="text-4xl py-4 bg-black hover:text-orange-700 rounded-full px-8 text-orange-600"
-                        >
-                            Confirm
-                        </button>
-                    ) : step < 3 ? (
-                        <button
-                            onClick={() => setStep(step + 1)}
-                            className="text-4xl py-4 bg-black rounded-full px-8 hover:text-orange-700 text-orange-600"
-                        >
-                            Next
-                        </button>
+                    {step < 3 ? (
+                        <button onClick={() => setStep(step + 1)} className="text-4xl py-4 bg-black text-orange-600 rounded-full px-8">Next</button>
+                    ) : step === 3 ? (
+                        <button onClick={confirmOrder} className="text-4xl py-4 bg-black text-orange-600 rounded-full px-8">Confirm</button>
                     ) : (
-                        <button
-                            onClick={handleClose}
-                            className="text-4xl py-4 bg-black rounded-full px-8 text-orange-600 hover:text-orange-700"
-                        >
-                            Close
-                        </button>
+                        <button onClick={handleClose} className="text-4xl bg-black text-orange-600 rounded-full py-4 px-8">Close</button>
                     )}
                 </DialogActions>
             </Dialog>

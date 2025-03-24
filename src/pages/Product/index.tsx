@@ -169,7 +169,10 @@ const Product = () => {
               <div className="flex items-center gap-4">
                 <h2 className="text-4xl text-gray-700">Price:</h2>
                 <p className="text-3xl font-extrabold text-gray-800">
-                  Rs {product.price}
+                Rs. {new Intl.NumberFormat("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                }).format(product.price)}
                 </p>
               </div>
 

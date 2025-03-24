@@ -47,7 +47,12 @@ const CartModal: React.FC<CartModalProps> = ({ show, setShow }) => {
                 <span>Total</span>
               </p>
               <p>
-                <span>{totalPrice.toFixed(2)}</span>
+                <span>
+                  Rs. {new Intl.NumberFormat("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  }).format(totalPrice)}
+                </span>
               </p>
             </div>
             <div className={styles.buttons_wrapper}>
