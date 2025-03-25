@@ -217,44 +217,164 @@ const OrderPopup = () => {
                         </div>
                     )}
                     {step === 3 && (
-                        <div className="space-y-10">
-                            <h3 className="text-5xl mb-6">Select Shipping and Payment Method:</h3>
+                        <div className="space-y-12">
+                            {/* Section Title */}
+                            <h3 className="text-5xl font-bold mb-8 text-gray-800">Select Shipping and Payment Method:</h3>
 
-                            <TextField
-                                select
-                                label="Shipping Method"
-                                name="shippingMethod"
-                                fullWidth
-                                value={formData.shippingMethod}
-                                onChange={handleInputChange}
-                                InputProps={{
-                                    style: { fontSize: "1.5rem" },
-                                }}
-                                InputLabelProps={{
-                                    style: { fontSize: "1.5rem" },
-                                }}
-                            >
-                                <MenuItem value="Standard" style={{ fontSize: "1.5rem" }}>Standard</MenuItem>
-                                <MenuItem value="Express" style={{ fontSize: "1.5rem" }}>Express</MenuItem>
-                            </TextField>
+                            {/* Shipping Method */}
+                            <div className="space-y-6">
+                                <h4 className="text-3xl font-semibold text-gray-700">Shipping Method</h4>
 
-                            <TextField
-                                select
-                                label="Payment Method"
-                                name="paymentMethod"
-                                fullWidth
-                                value={formData.paymentMethod}
-                                onChange={handleInputChange}
-                                InputProps={{
-                                    style: { fontSize: "1.5rem" },
-                                }}
-                                InputLabelProps={{
-                                    style: { fontSize: "1.5rem" },
-                                }}
-                            >
-                                <MenuItem value="Card" style={{ fontSize: "1.5rem" }}>Card</MenuItem>
-                                <MenuItem value="Cash on Delivery" style={{ fontSize: "1.5rem" }}>Cash on Delivery</MenuItem>
-                            </TextField>
+                                <TextField
+                                    select
+                                    label="Choose Shipping Method"
+                                    name="shippingMethod"
+                                    fullWidth
+                                    value={formData.shippingMethod}
+                                    onChange={handleInputChange}
+                                    variant="outlined"
+                                    InputProps={{
+                                        style: {
+                                            fontSize: "1.5rem",
+                                            borderRadius: "12px",
+                                            padding: "10px 20px",
+                                        },
+                                    }}
+                                    InputLabelProps={{
+                                        style: { fontSize: "1.4rem" },
+                                    }}
+                                    SelectProps={{
+                                        renderValue: (selected) => {
+                                            const shippingOptions: Record<string, string> = {
+                                                "Standard": "Free",
+                                                "Express": "Rs 500",
+                                                "Laperds": "Rs 400",
+                                                "TCS Overnight": "Rs 330",
+                                                "TCS Same Day": "Rs 90",
+                                                "M&P Same Day": "Rs 300",
+                                                "M&P Overnight": "Rs 245",
+                                                "Pakistan Post": "Rs 150",
+                                                "DCS Karachi": "Rs 140",
+                                                "Barqraftar Local": "Rs 150",
+                                            };
+                                            return (
+                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                    <span>{selected}</span>
+                                                    <span className="text-gray-500">{shippingOptions[selected] || "Varies"}</span>
+                                                </div>
+                                            );
+                                        },
+                                    }}
+                                >
+                                    {[
+                                        { value: "Standard", label: "Standard", price: "Free" },
+                                        { value: "Express", label: "Express", price: "Rs 500" },
+                                        { value: "TCS Overnight", label: "TCS Overnight", price: "Rs 330" },
+                                        { value: "TCS Same Day", label: "TCS Same Day", price: "Rs 90" },
+                                        { value: "M&P Same Day", label: "M&P Same Day", price: "Rs 300" },
+                                        { value: "M&P Overnight", label: "M&P Overnight", price: "Rs 245" },
+                                        { value: "Laperds", label: "Laperds", price: "Rs 400" },
+                                        { value: "Pakistan Post", label: "Pakistan Post", price: "Rs 150" },
+                                        { value: "DCS Karachi", label: "DCS Karachi", price: "Rs 140" },
+                                        { value: "Barqraftar Local", label: "Barqraftar Local", price: "Rs 150" },
+                                    ].map((item) => (
+                                        <MenuItem
+                                            key={item.value}
+                                            value={item.value}
+                                            style={{
+                                                fontSize: "1.5rem",
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                padding: "15px 20px",
+                                            }}
+                                        >
+                                            <span>{item.label}</span>
+                                            <span>({item.price})</span>
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                            </div>
+
+                            {/* Payment Method */}
+                            <div className="space-y-6">
+                                <h4 className="text-3xl font-semibold text-gray-700">Payment Method</h4>
+
+                                <TextField
+                                    select
+                                    label="Choose Payment Method"
+                                    name="paymentMethod"
+                                    fullWidth
+                                    value={formData.paymentMethod}
+                                    onChange={handleInputChange}
+                                    variant="outlined"
+                                    InputProps={{
+                                        style: {
+                                            fontSize: "1.5rem",
+                                            borderRadius: "12px",
+                                            padding: "10px 20px",
+                                        },
+                                    }}
+                                    InputLabelProps={{
+                                        style: { fontSize: "1.4rem" },
+                                    }}
+                                    SelectProps={{
+                                        renderValue: (selected) => {
+                                            const paymentDetails: Record<string, string> = {
+                                                "Credit Card": "(Visa / MasterCard)",
+                                                "Debit Card": "(ATM / Visa Debit)",
+                                                "Easypaisa": "(Mobile Wallet)",
+                                                "Jazz Cash": "(Mobile Wallet)",
+                                                "Bank Account Transfer": "(Account No Transfer)",
+                                                "Bank Transfer": "(Bank-to-Bank)",
+                                                "Cash on Delivery": "(Pay on Arrival)",
+                                            };
+
+                                            return (
+                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                    <span>{selected}</span>
+                                                    <span className="text-gray-500">{paymentDetails[selected] || ""}</span>
+                                                </div>
+                                            );
+                                        },
+                                    }}
+                                >
+                                    {[
+                                        { value: "Credit Card", label: "Credit Card", detail: "Visa / MasterCard" },
+                                        { value: "Debit Card", label: "Debit Card", detail: "ATM / Visa Debit" },
+                                        { value: "Easypaisa", label: "Easypaisa", detail: "Mobile Wallet" },
+                                        { value: "Jazz Cash", label: "Jazz Cash", detail: "Mobile Wallet" },
+                                        {
+                                            value: "Bank Account Transfer",
+                                            label: "Bank Account Transfer",
+                                            detail: "Account No Transfer",
+                                        },
+                                        {
+                                            value: "Bank Transfer",
+                                            label: "Bank Transfer",
+                                            detail: "Bank-to-Bank",
+                                        },
+                                        {
+                                            value: "Cash on Delivery",
+                                            label: "Cash on Delivery",
+                                            detail: "Pay on Arrival",
+                                        },
+                                    ].map((item) => (
+                                        <MenuItem
+                                            key={item.value}
+                                            value={item.value}
+                                            style={{
+                                                fontSize: "1.5rem",
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                padding: "15px 20px",
+                                            }}
+                                        >
+                                            <span>{item.label}</span>
+                                            <span>({item.detail})</span>
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                            </div>
                         </div>
                     )}
 
