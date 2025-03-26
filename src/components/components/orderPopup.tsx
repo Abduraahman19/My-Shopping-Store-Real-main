@@ -104,18 +104,18 @@ const OrderPopup = () => {
 
             <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
                 <div className="bg-[#FEEBF8] text-white pl-5 flex justify-between items-center">
-                    <h2 className="text-5xl text-[#ADADAD] py-5">
+                    <h2 className="text-5xl text-[#9b9b9b] py-5">
                         {step === 1 ? "Order Summary" : step === 2 ? "User Information" : step === 3 ? "Shipping & Payment" : "Order Confirmation"}
                     </h2>
-                    <div onClick={handleClose} className="hover:bg-red-600 cursor-pointer transition duration-300 h-24 w-24 flex items-center justify-center">
+                    <div onClick={handleClose} className="hover:bg-red-600 cursor-pointer text-black hover:text-white transition duration-300 h-24 w-24 flex items-center justify-center">
                         <AiOutlineClose className="text-4xl" />
                     </div>
                 </div>
 
-                <DialogContent className="bg-gray-50 text-gray-800">
+                <DialogContent className="bg-gray-200 text-gray-800">
                     {step === 1 && (
-                        <div className="p-8 bg-gray-50 rounded-xl shadow-xl">
-                            <h2 className="text-5xl font-bold mb-8">Your Cart</h2>
+                        <div className="p-8 bg-neutral-100 rounded-3xl shadow-xl">
+                            <h2 className="text-5xl bg-orange-600/25 px-7 py-2 rounded-full w-72 text-orange-600 mb-8">Your Cart</h2>
 
                             {cartItems.length === 0 ? (
                                 <p className="text-3xl text-gray-600">Your cart is empty.</p>
@@ -124,9 +124,11 @@ const OrderPopup = () => {
                                     {cartItems.map((item, index) => (
                                         <div
                                             key={item.product.id}
-                                            className="flex items-center gap-6 mb-6 p-6 border rounded-lg shadow-md bg-white"
+                                            className="flex items-center gap-6 mb-6 p-6 border rounded-xl shadow-md bg-white"
                                         >
-                                            <span className="text-3xl font-semibold">{index + 1}.</span>
+                                            <span className="text-3xl mr-[-8px] bg-black/20 inline-flex items-center justify-center w-12 aspect-square rounded-full text-black">
+                                                {index + 1}
+                                            </span>
                                             <img
                                                 src={item.product.image}
                                                 alt={item.product.title}
@@ -136,20 +138,20 @@ const OrderPopup = () => {
                                             <div className="flex-1">
                                                 <p className="text-3xl font-semibold mb-2">{item.product.title}</p>
                                                 <p className="text-2xl text-gray-700">Quantity: {item.quantity}</p>
-                                                <p className="text-2xl text-gray-700">Price: Rs    Rs. {new Intl.NumberFormat("en-US", {
+                                                <p className="text-2xl text-gray-700">Price: Rs. {new Intl.NumberFormat("en-US", {
                                                     minimumFractionDigits: 2,
                                                     maximumFractionDigits: 2,
                                                 }).format(item.product.price)}</p>
                                                 <p className="text-2xl font-bold text-gray-900 mt-2">
-                                                    Subtotal: Rs {(item.quantity * item.product.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                    Subtotal: Rs. {(item.quantity * item.product.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                                 </p>
                                             </div>
                                         </div>
                                     ))}
 
                                     <div className="mt-12 border-t pt-8">
-                                        <h3 className="text-4xl font-extrabold mb-6">Total Amount:</h3>
-                                        <p className="text-5xl text-green-600 font-bold">
+                                        <h3 className="text-4xl mb-6">Total Amount:</h3>
+                                        <p className="text-5xl text-green-600 px-5 py-2 bg-green-600/30 rounded-full w-96">
                                             Rs. {new Intl.NumberFormat("en-US", {
                                                 minimumFractionDigits: 2,
                                                 maximumFractionDigits: 2,
@@ -158,11 +160,11 @@ const OrderPopup = () => {
                                     </div>
 
                                     <div className="mt-12">
-                                        <h4 className="text-4xl font-bold mb-4">Cart Summary:</h4>
+                                        <h4 className="text-4xl text-gray-600 mb-4">Cart Summary:</h4>
                                         <ul className="list-disc ml-8 space-y-4">
                                             {cartItems.map((item, index) => (
-                                                <li key={item.product.id} className="text-2xl text-gray-800">
-                                                    <strong>Product {index + 1}:</strong> {item.product.title} - {item.quantity} pcs @ Rs {item.product.price.toFixed(2)} each
+                                                <li key={item.product.id} className="text-2xl text-neutral-600">
+                                                    <strong className="text-neutral-900">Product {index + 1}:</strong> {item.product.title} - {item.quantity} pcs @ Rs {item.product.price.toFixed(2)} each
                                                 </li>
                                             ))}
                                         </ul>
@@ -173,9 +175,8 @@ const OrderPopup = () => {
                     )}
 
                     {step === 2 && (
-                        <div>
-                            <h3 className="text-5xl mb-6">Enter Your Information:</h3>
-
+                        <div className="bg-neutral-100 p-8 rounded-3xl shadow-xl">
+                            <h3 className="text-5xl mb-6 bg-orange-600/25 px-7 py-2 rounded-full w-[340px] text-orange-600">Enter Your Information:</h3>
                             {Object.keys(initialFormState).slice(0, 6).map((field) => (
                                 <TextField
                                     key={field}
@@ -186,7 +187,7 @@ const OrderPopup = () => {
                                     value={formData[field]}
                                     onChange={handleInputChange}
                                     InputProps={{
-                                        style: { fontSize: "1.7rem", fontWeight: "unset" },
+                                        style: { fontSize: "1.7rem", fontWeight: "unset", boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" },
                                     }}
                                     InputLabelProps={{
                                         style: { fontSize: "1.7rem" },
@@ -200,7 +201,7 @@ const OrderPopup = () => {
                                     name="country"
                                     value={formData.country}
                                     onChange={handleInputChange}
-                                    style={{ fontSize: "1.7rem", fontWeight: "unset" }}
+                                    style={{ fontSize: "1.7rem", fontWeight: "unset", boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)" }}
                                 >
                                     {countries.map((country) => (
                                         <MenuItem key={country.name} value={country.name} style={{ fontSize: "1.8rem", fontWeight: "unset" }}>
@@ -217,13 +218,13 @@ const OrderPopup = () => {
                         </div>
                     )}
                     {step === 3 && (
-                        <div className="space-y-12">
+                        <div className="space-y-12 bg-neutral-100 p-8 rounded-3xl shadow-xl">
                             {/* Section Title */}
-                            <h3 className="text-5xl font-bold mb-8 text-gray-800">Select Shipping and Payment Method:</h3>
+                            <h3 className="text-5xl bg-orange-600/25 p-4 rounded-full text-orange-600 mb-8">Select Shipping and Payment Method:</h3>
 
                             {/* Shipping Method */}
                             <div className="space-y-6">
-                                <h4 className="text-3xl font-semibold text-gray-700">Shipping Method</h4>
+                                <h4 className="text-3xl mb-2 bg-gray-600/25 w-[170px] px-7 py-2 rounded-full text-gray-600">Shipping Method</h4>
 
                                 <TextField
                                     select
@@ -238,6 +239,7 @@ const OrderPopup = () => {
                                             fontSize: "1.5rem",
                                             borderRadius: "12px",
                                             padding: "10px 20px",
+                                            boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
                                         },
                                     }}
                                     InputLabelProps={{
@@ -297,7 +299,7 @@ const OrderPopup = () => {
 
                             {/* Payment Method */}
                             <div className="space-y-6">
-                                <h4 className="text-3xl font-semibold text-gray-700">Payment Method</h4>
+                                <h4 className="text-3xl mb-2 bg-gray-600/25 w-[160px] px-5 py-2 rounded-full text-gray-600">Payment Method</h4>
 
                                 <TextField
                                     select
@@ -312,6 +314,7 @@ const OrderPopup = () => {
                                             fontSize: "1.5rem",
                                             borderRadius: "12px",
                                             padding: "10px 20px",
+                                            boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
                                         },
                                     }}
                                     InputLabelProps={{
@@ -379,10 +382,11 @@ const OrderPopup = () => {
                     )}
 
                     {step === 4 && (
-                        <div className="flex flex-col items-center justify-center text-center p-8">
-                            <h3 className="text-6xl font-extrabold text-green-600 mb-6">Order Confirmed! 🎉</h3>
-                            <p className="text-2xl text-gray-700 mb-4">Thank you for your purchase. Your order has been successfully placed.</p>
-                            <p className="text-xl text-gray-500">We'll notify you once your items are on the way.</p>
+                        <div className="flex flex-col bg-neutral-100 rounded-3xl items-center justify-center text-center p-10">
+                            <h3 className="text-6xl font-extrabold text-green-600 mb-8 animate-bounce">Order Confirmed! 🎉</h3>
+                            <p className="text-2xl text-gray-800 mb-6">Thank you for your order! We have successfully received your purchase.</p>
+                            <p className="text-xl text-gray-600 mb-4">A confirmation email has been sent to your inbox with all the details.</p>
+                            <p className="text-lg text-gray-500">We will notify you as soon as your items are shipped. Stay tuned!</p>
                         </div>
                     )}
                 </DialogContent>
