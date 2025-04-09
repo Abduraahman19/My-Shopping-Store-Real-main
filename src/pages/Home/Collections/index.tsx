@@ -21,29 +21,30 @@ const Collections = () => {
         setCategories(data);
       } catch (error) {
         console.error("Error fetching categories:", error);
-      }
+      } 
     };
 
     fetchCategories();
   }, []);
 
+
   return (
     <section className="overflow-hidden">
       <div className="main-container py-12 md:py-32">
-        <p className="md:text-7xl text-5xl bg-orange-600/25 rounded-full md:w-[270px] w-[200px]  text-center text-orange-600 tracking-wide text-title leading-tight mb-2">
+        <p className="md:text-7xl text-5xl bg-orange-600/25 rounded-full md:w-[280px] w-[210px]  text-center text-orange-600 tracking-wide text-title leading-tight mb-2">
           Categories:
         </p>
         <div className="py-10">
           <div className="grid grid-cols-1 gap-0 md:grid-cols-7 md:grid-rows-2 md:gap-5">
             {categories.map((item, id) => {
-                const gridClass = [
+              const gridClass = [
                 "md:col-span-3 md:row-span-1 shadow-2xl rounded-3xl",
                 "md:col-span-2 md:row-span-1 shadow-2xl rounded-3xl",
                 "md:col-span-2 md:row-span-1 shadow-2xl rounded-3xl",
                 "md:col-span-3 md:row-span-1 shadow-2xl rounded-3xl",
                 "md:col-span-2 md:row-span-2 shadow-2xl rounded-3xl",
                 "md:col-span-2 md:row-span-2 shadow-2xl rounded-3xl",
-                ][id % 6] || "";
+              ][id % 6] || "";
 
               return (
                 <Link key={item.id} to={item.link} className={`relative ${gridClass}`}>

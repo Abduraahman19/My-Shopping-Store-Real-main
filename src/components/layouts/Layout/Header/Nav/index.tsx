@@ -5,6 +5,7 @@ import { RiSearch2Line, RiUserLine } from "react-icons/ri";
 import axios from "axios";
 import CartIcon from "./CartIcon";
 import { navData } from "../../../../../data/navItems";
+import Orders from "../../../../../components/components/Orders";
 
 interface NavbarProps {
   handleShow: () => void;
@@ -108,6 +109,7 @@ const Navbar: React.FC<NavbarProps> = ({ handleShow }) => {
               <RiSearch2Line size={24} />
             </button>
           </li>
+          <Orders/>
           <li>
             <div className="cursor-pointer text-4xl text-gray-600" onClick={handleShow}>
               <CartIcon />

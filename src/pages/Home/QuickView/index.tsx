@@ -5,6 +5,7 @@ import { MdArrowRightAlt } from "react-icons/md";
 import { Link } from "react-router-dom";
 import { navData } from "../../../data/navItems";
 
+
 interface Product {
   id: number;
   _id: string;
@@ -48,6 +49,7 @@ const QuickView = () => {
       setFilteredProducts(filtered);
     }
   };
+
 
   return (
     <section className={styles.section}>
