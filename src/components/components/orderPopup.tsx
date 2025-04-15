@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { loadStripe } from "@stripe/stripe-js";
 import {
     Dialog,
     DialogContent,
@@ -13,6 +14,9 @@ import {
 import { AiOutlineClose } from "react-icons/ai";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { cartReset } from "../../features/cart/cartSlice";
+
+// Initialize Stripe
+const stripePromise = loadStripe("pk_test_your_publishable_key_here");
 
 // Type definitions
 interface Product {
@@ -44,6 +48,28 @@ interface FormData {
     country: string;
 }
 
+interface PaymentDetails {
+    method: string;
+    details: {
+        cardHolderName?: string;
+        cardNumber?: string;
+        expiryDate?: string;
+        cvv?: string;
+        billingAddress?: string;
+        mobileNumber?: string;
+        transactionId?: string;
+        cnic?: string;
+        accountTitle?: string;
+        bankName?: string;
+        senderAccountNumber?: string;
+        transferDate?: string;
+        deliveryAddress?: string;
+        recipientName?: string;
+        notes?: string;
+        paymentProof?: File | null;
+    };
+}
+
 const shippingOptions = [
     { value: "Standard", label: "Standard", price: "Free" },
     { value: "Express", label: "Express", price: "Rs 500" },
@@ -58,8 +84,7 @@ const shippingOptions = [
 ];
 
 const paymentOptions = [
-    { value: "Credit Card", label: "Credit Card", detail: "Visa / MasterCard" },
-    { value: "Debit Card", label: "Debit Card", detail: "ATM / Visa Debit" },
+    { value: "Stripe", label: "Credit/Debit Card",  detail: "Secure payment via Stripe" },
     { value: "Easypaisa", label: "Easypaisa", detail: "Mobile Wallet" },
     { value: "Jazz Cash", label: "Jazz Cash", detail: "Mobile Wallet" },
     { value: "Bank Account Transfer", label: "Bank Account Transfer", detail: "Account No Transfer" },
@@ -79,6 +104,13 @@ const initialFormState: FormData = {
     country: "",
 };
 
+const initialPaymentDetails: PaymentDetails = {
+    method: "",
+    details: {
+        paymentProof: null
+    }
+};
+
 const OrderPopup = () => {
     const [open, setOpen] = useState(false);
     const [step, setStep] = useState(1);
@@ -86,6 +118,9 @@ const OrderPopup = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
     const [formData, setFormData] = useState<FormData>(initialFormState);
+    const [paymentDetails, setPaymentDetails] = useState<PaymentDetails>(initialPaymentDetails);
+    const [fileName, setFileName] = useState("");
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const dispatch = useAppDispatch();
     const cartItems = useAppSelector((state) => state.cart.cartItems) || [];
@@ -110,8 +145,23 @@ const OrderPopup = () => {
         fetchCountries();
     }, []);
 
+    useEffect(() => {
+        if (formData.paymentMethod) {
+            setPaymentDetails({
+                method: formData.paymentMethod,
+                details: {
+                    ...paymentDetails.details,
+                    paymentProof: null
+                }
+            });
+            setFileName("");
+        }
+    }, [formData.paymentMethod]);
+
     const openPopup = () => {
         setFormData(initialFormState);
+        setPaymentDetails(initialPaymentDetails);
+        setFileName("");
         setStep(1);
         setOpen(true);
     };
@@ -133,6 +183,31 @@ const OrderPopup = () => {
         }
     };
 
+    const handlePaymentDetailsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setPaymentDetails(prev => ({
+            ...prev,
+            details: {
+                ...prev.details,
+                [name]: value
+            }
+        }));
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
+            setPaymentDetails(prev => ({
+                ...prev,
+                details: {
+                    ...prev.details,
+                    paymentProof: file
+                }
+            }));
+            setFileName(file.name);
+        }
+    };
+
     const validateForm = (): boolean => {
         const requiredFields = ['name', 'email', 'address', 'city', 'zip', 'phone', 'country'];
         const missingFields = requiredFields.filter(field => !formData[field as keyof FormData]);
@@ -147,49 +222,144 @@ const OrderPopup = () => {
             return false;
         }
 
+        if (step === 3 && formData.paymentMethod !== "Stripe") {
+            const requiredPaymentFields = getRequiredPaymentFields(formData.paymentMethod);
+            const missingPaymentFields = requiredPaymentFields.filter(field => {
+                if (field === 'paymentProof') {
+                    return !paymentDetails.details.paymentProof;
+                }
+                return !paymentDetails.details[field as keyof typeof paymentDetails.details];
+            });
+            
+            if (missingPaymentFields.length > 0) {
+                setError(`Please fill in all required payment fields: ${missingPaymentFields.join(', ')}`);
+                return false;
+            }
+        }
+
         return true;
+    };
+
+    const getRequiredPaymentFields = (method: string): string[] => {
+        const baseFields = [];
+        switch (method) {
+            case "Easypaisa":
+            case "Jazz Cash":
+                baseFields.push("mobileNumber", "transactionId", "cnic");
+                break;
+            case "Bank Account Transfer":
+            case "Bank Transfer":
+                baseFields.push("accountTitle", "bankName", "senderAccountNumber", "transferDate");
+                break;
+            case "Cash on Delivery":
+                baseFields.push("recipientName", "deliveryAddress");
+                break;
+        }
+        if (method !== "Cash on Delivery" && method !== "Stripe") {
+            baseFields.push("paymentProof");
+        }
+        return baseFields;
+    };
+
+    const handleStripeCheckout = async () => {
+        setIsSubmitting(true);
+        try {
+            // Prepare products data for Stripe
+            const lineItems = cartItems.map(item => ({
+                price_data: {
+                    currency: 'pkr',
+                    product_data: {
+                        name: item.product.title,
+                        images: [item.product.image],
+                    },
+                    unit_amount: item.product.price * 100, // Stripe uses cents
+                },
+                quantity: item.quantity,
+            }));
+
+            const response = await fetch("http://localhost:5000/api/stripe/create-checkout-session", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    lineItems,
+                    customerEmail: formData.email,
+                    shippingMethod: formData.shippingMethod,
+                    metadata: {
+                        customerName: formData.name,
+                        customerAddress: formData.address,
+                        customerCity: formData.city,
+                        customerCountry: formData.country,
+                        customerZip: formData.zip,
+                        customerPhone: formData.phone,
+                    }
+                }),
+            });
+
+            const session = await response.json();
+            const stripe = await stripePromise;
+            const result = await stripe.redirectToCheckout({
+                sessionId: session.id
+            });
+
+            if (result.error) {
+                throw new Error(result.error.message);
+            }
+        } catch (error) {
+            console.error("Stripe checkout error:", error);
+            setError(error instanceof Error ? error.message : "Failed to process payment");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const confirmOrder = async () => {
         if (!validateForm()) return;
+        
+        if (formData.paymentMethod === "Stripe") {
+            await handleStripeCheckout();
+            return;
+        }
+
         setIsSubmitting(true);
         setError("");
         
         try {
             // Prepare products data
             const productsData = cartItems.map(item => ({
-                productId: item.product.id, // Make sure to include product ID
+                productId: item.product.id,
                 name: item.product.title,
                 price: item.product.price,
                 quantity: item.quantity,
-                image: item.product.image // Include image if needed
+                image: item.product.image
             }));
             
-            // Prepare order data according to backend requirements
+            // Prepare order data
             const orderData = {
                 customer: {
                     name: formData.name,
                     email: formData.email,
                     address: formData.address,
                     city: formData.city,
-                    zipCode: formData.zip, // Changed to match common schema naming
+                    zipCode: formData.zip,
                     phone: formData.phone,
                     country: formData.country
                 },
                 products: productsData,
                 shippingMethod: formData.shippingMethod || "Standard",
-                paymentMethod: formData.paymentMethod || "Credit Card",
-                paymentStatus: "Unpaid",
+                paymentMethod: formData.paymentMethod,
+                paymentStatus: formData.paymentMethod === "Stripe" ? "Pending" : "Unpaid",
                 status: "Pending",
-                // Calculate totals
                 totalProducts: cartItems.length,
                 totalQuantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
-                totalPrice: totalAmount, // Use the pre-calculated total
-                shippingFee: calculateShippingFee(formData.shippingMethod), // Implement this function
+                totalPrice: totalAmount,
+                shippingFee: calculateShippingFee(formData.shippingMethod),
                 grandTotal: totalAmount + calculateShippingFee(formData.shippingMethod)
             };
             
-            const response = await fetch("http://localhost:5000/api/orders", {
+            // First send the order data
+            const orderResponse = await fetch("http://localhost:5000/api/orders", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -197,14 +367,42 @@ const OrderPopup = () => {
                 body: JSON.stringify(orderData),
             });
             
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error("Backend error details:", errorData); // Log detailed error
+            if (!orderResponse.ok) {
+                const errorData = await orderResponse.json();
                 throw new Error(errorData.message || "Failed to place order");
             }
             
-            const responseData = await response.json();
-            console.log("Order successful:", responseData); // Log success
+            const orderResponseData = await orderResponse.json();
+            
+            if (formData.paymentMethod !== "Stripe") {
+                // Prepare FormData for payment details (to include file upload)
+                const paymentFormData = new FormData();
+                paymentFormData.append("method", paymentDetails.method);
+                paymentFormData.append("orderId", orderResponseData.order._id);
+                
+                // Append all payment details
+                Object.entries(paymentDetails.details).forEach(([key, value]) => {
+                    if (value !== null && value !== undefined) {
+                        if (key === "paymentProof" && value instanceof File) {
+                            paymentFormData.append("paymentProof", value);
+                        } else if (typeof value === "string") {
+                            paymentFormData.append(`details[${key}]`, value);
+                        }
+                    }
+                });
+                
+                // Then send the payment details with file
+                const paymentResponse = await fetch("http://localhost:5000/api/payments", {
+                    method: "POST",
+                    body: paymentFormData,
+                });
+                
+                if (!paymentResponse.ok) {
+                    const errorData = await paymentResponse.json();
+                    throw new Error(errorData.message || "Failed to process payment");
+                }
+            }
+            
             setStep(4);
         } catch (error) {
             console.error("Error submitting order:", error);
@@ -213,15 +411,197 @@ const OrderPopup = () => {
             setIsSubmitting(false);
         }
     };
-    
-    // Helper function to calculate shipping fee based on method
+        
     const calculateShippingFee = (method: string): number => {
         const shippingMethod = shippingOptions.find(opt => opt.value === method);
         if (!shippingMethod) return 0;
         
-        // Extract numeric value from price string (e.g., "Rs 500" => 500)
         const priceMatch = shippingMethod.price.match(/\d+/);
         return priceMatch ? parseInt(priceMatch[0]) : 0;
+    };
+
+    const renderPaymentDetailsForm = () => {
+        switch (formData.paymentMethod) {
+            case "Stripe":
+                return (
+                    <div className="space-y-6 mt-8">
+                        <h4 className="text-3xl text-neutral-600">Secure Credit/Debit Card Payment</h4>
+                        <div className="bg-blue-50 p-6 rounded-xl border border-blue-200">
+                            <p className="text-xl text-blue-800 mb-4">
+                                You'll be redirected to Stripe's secure payment page to complete your transaction.
+                            </p>
+                            <div className="flex items-center gap-3">
+                                <img 
+                                    src="https://cdn.worldvectorlogo.com/logos/stripe-4.svg" 
+                                    alt="Stripe" 
+                                    className="h-10"
+                                />
+                                <div className="flex gap-2">
+                                    <img 
+                                        src="https://cdn.worldvectorlogo.com/logos/visa.svg" 
+                                        alt="Visa" 
+                                        className="h-8"
+                                    />
+                                    <img 
+                                        src="https://cdn.worldvectorlogo.com/logos/mastercard-2.svg" 
+                                        alt="Mastercard" 
+                                        className="h-8"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            case "Easypaisa":
+            case "Jazz Cash":
+                return (
+                    <div className="space-y-6 mt-8">
+                        <h4 className="text-3xl text-neutral-600">{formData.paymentMethod} Details</h4>
+                        <TextField
+                            name="mobileNumber"
+                            label="Mobile Number"
+                            fullWidth
+                            value={paymentDetails.details.mobileNumber || ""}
+                            onChange={handlePaymentDetailsChange}
+                            InputProps={{ style: { fontSize: "1.5rem" } }}
+                            InputLabelProps={{ style: { fontSize: "1.4rem" } }}
+                        />
+                        <TextField
+                            name="transactionId"
+                            label="Transaction ID"
+                            fullWidth
+                            value={paymentDetails.details.transactionId || ""}
+                            onChange={handlePaymentDetailsChange}
+                            InputProps={{ style: { fontSize: "1.5rem" } }}
+                            InputLabelProps={{ style: { fontSize: "1.4rem" } }}
+                        />
+                        <TextField
+                            name="cnic"
+                            label="CNIC"
+                            fullWidth
+                            value={paymentDetails.details.cnic || ""}
+                            onChange={handlePaymentDetailsChange}
+                            InputProps={{ style: { fontSize: "1.5rem" } }}
+                            InputLabelProps={{ style: { fontSize: "1.4rem" } }}
+                        />
+                        <div className="mt-4">
+                            <h5 className="text-2xl mb-2">Payment Proof (Screenshot/Receipt)</h5>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                accept="image/*,.pdf"
+                                style={{ display: 'none' }}
+                            />
+                            <button
+                                variant="contained"
+                                component="span"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="bg-orange-600/30 hover:bg-orange-600/40 hover:text-orange-700 text-orange-600 px-8 py-4 rounded-full text-3xl"
+                            >
+                                Upload File
+                            </button>
+                            {fileName && (
+                                <p className="text-xl mt-2">Selected file: {fileName}</p>
+                            )}
+                        </div>
+                    </div>
+                );
+            case "Bank Account Transfer":
+            case "Bank Transfer":
+                return (
+                    <div className="space-y-6 mt-8">
+                        <h4 className="text-3xl text-neutral-600">Bank Transfer Details</h4>
+                        <TextField
+                            name="accountTitle"
+                            label="Account Title"
+                            fullWidth
+                            value={paymentDetails.details.accountTitle || ""}
+                            onChange={handlePaymentDetailsChange}
+                            InputProps={{ style: { fontSize: "1.5rem" } }}
+                            InputLabelProps={{ style: { fontSize: "1.4rem" } }}
+                        />
+                        <TextField
+                            name="bankName"
+                            label="Bank Name"
+                            fullWidth
+                            value={paymentDetails.details.bankName || ""}
+                            onChange={handlePaymentDetailsChange}
+                            InputProps={{ style: { fontSize: "1.5rem" } }}
+                            InputLabelProps={{ style: { fontSize: "1.4rem" } }}
+                        />
+                        <TextField
+                            name="senderAccountNumber"
+                            label="Account Number"
+                            fullWidth
+                            value={paymentDetails.details.senderAccountNumber || ""}
+                            onChange={handlePaymentDetailsChange}
+                            InputProps={{ style: { fontSize: "1.5rem" } }}
+                            InputLabelProps={{ style: { fontSize: "1.4rem" } }}
+                        />
+                        <TextField
+                            name="transferDate"
+                            label="Transfer Date"
+                            type="date"
+                            fullWidth
+                            value={paymentDetails.details.transferDate || ""}
+                            onChange={handlePaymentDetailsChange}
+                            InputLabelProps={{ 
+                                style: { fontSize: "1.4rem" },
+                                shrink: true 
+                            }}
+                            InputProps={{ style: { fontSize: "1.5rem" } }}
+                        />
+                        <div className="mt-4">
+                            <h5 className="text-2xl mb-2">Payment Proof (Screenshot/Receipt)</h5>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                accept="image/*,.pdf"
+                                style={{ display: 'none' }}
+                            />
+                            <button
+                                variant="contained"
+                                component="span"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="bg-orange-600/30 hover:bg-orange-600/40 hover:text-orange-700 text-orange-600 px-8 py-4 rounded-full text-3xl"
+                            >
+                                Upload File
+                            </button>
+                            {fileName && (
+                                <p className="text-xl mt-2">Selected file: {fileName}</p>
+                            )}
+                        </div>
+                    </div>
+                );
+            case "Cash on Delivery":
+                return (
+                    <div className="space-y-6 mt-8">
+                        <h4 className="text-3xl text-neutral-600">Delivery Information</h4>
+                        <TextField
+                            name="recipientName"
+                            label="Recipient Name"
+                            fullWidth
+                            value={paymentDetails.details.recipientName || ""}
+                            onChange={handlePaymentDetailsChange}
+                            InputProps={{ style: { fontSize: "1.5rem" } }}
+                            InputLabelProps={{ style: { fontSize: "1.4rem" } }}
+                        />
+                        <TextField
+                            name="deliveryAddress"
+                            label="Delivery Address"
+                            fullWidth
+                            value={paymentDetails.details.deliveryAddress || ""}
+                            onChange={handlePaymentDetailsChange}
+                            InputProps={{ style: { fontSize: "1.5rem" } }}
+                            InputLabelProps={{ style: { fontSize: "1.4rem" } }}
+                        />
+                    </div>
+                );
+            default:
+                return null;
+        }
     };
 
     const renderStepContent = () => {
@@ -344,6 +724,7 @@ const OrderPopup = () => {
                                     </MenuItem>
                                 ))}
                             </TextField>
+                            {formData.paymentMethod && renderPaymentDetailsForm()}
                         </div>
                     </div>
                 );
@@ -421,7 +802,7 @@ const OrderPopup = () => {
                                     <CircularProgress size={30} color="inherit" />
                                     Processing...
                                 </>
-                            ) : "Confirm"}
+                            ) : formData.paymentMethod === "Stripe" ? "Pay with Stripe" : "Confirm Order"}
                         </button>
                     ) : (
                         <button 

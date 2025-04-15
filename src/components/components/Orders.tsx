@@ -442,10 +442,21 @@ const UserOrdersPopup: React.FC = () => {
                                     </p>
                                     <p>
                                       <span className="font-extrabold text-gray-600">Address:</span>{' '}
-                                      <span className='font-bold text-neutral-600'>
-                                        {order.customer.address}, {order.customer.city}, {order.customer.zip}, {order.customer.country}
-                                      </span>
+                                      <span className='font-bold text-neutral-600'>{order.customer.address}</span>
+                                      </p>
+                                      <p>
+                                      <span className="font-extrabold text-gray-600">City:</span>{' '}
+                                      <span className='font-bold text-neutral-600'>{order.customer.city}</span>
                                     </p>
+                                    <p>
+                                      <span className="font-extrabold text-gray-600">Country:</span>{' '}
+                                      <span className='font-bold text-neutral-600 uppercase'>{order.customer.country}</span>
+                                    </p>
+                                    <p>
+                                      <span className="font-extrabold text-gray-600">ZipCode:</span>{' '}
+                                      <span className='font-bold text-neutral-600'>{order.customer.zipCode}</span>
+                                    </p>
+                                    
                                   </div>
                                 </motion.div>
 
