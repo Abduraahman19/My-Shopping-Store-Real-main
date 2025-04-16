@@ -228,7 +228,7 @@ const UserOrdersPopup: React.FC = () => {
             >
               <p className="font-bold">Error</p>
               <p>{error}</p>
-              <button 
+              <button
                 onClick={fetchOrders}
                 className="mt-2 px-4 py-2 bg-orange-600 text-white rounded-lg"
               >
@@ -299,9 +299,8 @@ const UserOrdersPopup: React.FC = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3 }}
-                      className={`bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 ${
-                        expandedOrder === order._id ? 'ring-2 ring-orange-100' : 'hover:shadow-lg'
-                      }`}
+                      className={`bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 ${expandedOrder === order._id ? 'ring-2 ring-orange-100' : 'hover:shadow-lg'
+                        }`}
                     >
                       <motion.div
                         className="p-5 cursor-pointer flex justify-between items-center"
@@ -443,8 +442,8 @@ const UserOrdersPopup: React.FC = () => {
                                     <p>
                                       <span className="font-extrabold text-gray-600">Address:</span>{' '}
                                       <span className='font-bold text-neutral-600'>{order.customer.address}</span>
-                                      </p>
-                                      <p>
+                                    </p>
+                                    <p>
                                       <span className="font-extrabold text-gray-600">City:</span>{' '}
                                       <span className='font-bold text-neutral-600'>{order.customer.city}</span>
                                     </p>
@@ -454,9 +453,8 @@ const UserOrdersPopup: React.FC = () => {
                                     </p>
                                     <p>
                                       <span className="font-extrabold text-gray-600">ZipCode:</span>{' '}
-                                      <span className='font-bold text-neutral-600'>{order.customer.zipCode}</span>
+                                      <span className='font-bold text-neutral-600'>{order.customer.zip}</span>
                                     </p>
-                                    
                                   </div>
                                 </motion.div>
 
@@ -472,6 +470,7 @@ const UserOrdersPopup: React.FC = () => {
                                     <table className="min-w-full divide-y divide-gray-300">
                                       <thead className="bg-gray-200">
                                         <tr>
+                                          <th className="px-4 py-2 text-left text-xl font-semibold text-gray-500 uppercase tracking-wider">Image</th>
                                           <th className="px-4 py-2 text-left text-xl font-semibold text-gray-500 uppercase tracking-wider">Product</th>
                                           <th className="px-4 py-2 text-left text-xl font-semibold text-gray-500 uppercase tracking-wider">Quantity</th>
                                           <th className="px-4 py-2 text-left text-xl font-semibold text-gray-500 uppercase tracking-wider">Price</th>
@@ -486,6 +485,13 @@ const UserOrdersPopup: React.FC = () => {
                                             animate={{ opacity: 1 }}
                                             transition={{ duration: 0.3 }}
                                           >
+                                            <td className="px-4 py-3 whitespace-nowrap">
+                                              <img
+                                                src={product.image}
+                                                alt={product.name}
+                                                className="h-16 w-16 object-cover rounded-lg border"
+                                              />
+                                            </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-xl font-bold text-gray-700">{product.name}</td>
                                             <td className="px-4 py-3 whitespace-nowrap text-xl font-bold text-gray-600">{product.quantity}</td>
                                             <td className="px-4 py-3 whitespace-nowrap text-xl font-bold text-gray-500">Rs.{product.price.toLocaleString()}</td>
@@ -495,6 +501,7 @@ const UserOrdersPopup: React.FC = () => {
                                       </tbody>
                                     </table>
                                   </div>
+
                                 </motion.div>
                               </div>
 

@@ -998,7 +998,6 @@ const OrderPopup = () => {
     }, []);
 
     useEffect(() => {
-        // Initialize payment details when payment method changes
         if (formData.paymentMethod) {
             setPaymentDetails({
                 method: formData.paymentMethod,
@@ -1075,7 +1074,6 @@ const OrderPopup = () => {
             return false;
         }
 
-        // Validate payment details based on method
         if (step === 3) {
             const requiredPaymentFields = getRequiredPaymentFields(formData.paymentMethod);
             const missingPaymentFields = requiredPaymentFields.filter(field => {
@@ -1113,7 +1111,6 @@ const OrderPopup = () => {
                 baseFields.push("recipientName", "deliveryAddress");
                 break;
         }
-        // Payment proof is required for all methods except Cash on Delivery
         if (method !== "Cash on Delivery") {
             baseFields.push("paymentProof");
         }
@@ -1126,13 +1123,13 @@ const OrderPopup = () => {
         setError("");
         
         try {
-            // Prepare products data
+            // Prepare products data with images
             const productsData = cartItems.map(item => ({
                 productId: item.product.id,
                 name: item.product.title,
                 price: item.product.price,
                 quantity: item.quantity,
-                image: item.product.image
+                image: item.product.image // ✅ Including image in order data
             }));
             
             // Prepare order data
@@ -1173,7 +1170,6 @@ const OrderPopup = () => {
             }
             
             const orderResponseData = await orderResponse.json();
-            console.log("🚀 ~ confirmOrder ~ orderResponseData:", orderResponseData)
             
             // Prepare FormData for payment details (to include file upload)
             const paymentFormData = new FormData();
@@ -1196,7 +1192,6 @@ const OrderPopup = () => {
                 method: "POST",
                 body: paymentFormData,
             });
-            console.log("🚀 ~ confirmOrder ~ paymentResponse:", paymentResponse)
             
             if (!paymentResponse.ok) {
                 const errorData = await paymentResponse.json();
@@ -1344,7 +1339,7 @@ const OrderPopup = () => {
                                 component="span"
                                 onClick={() => fileInputRef.current?.click()}
                                 className="bg-orange-600/30 hover:bg-orange-600/40 hover:text-orange-700 text-orange-600 px-8 py-4 rounded-full text-3xl"
-                        >
+                            >
                                 Upload File
                             </button>
                             {fileName && (
@@ -1443,7 +1438,6 @@ const OrderPopup = () => {
                             InputProps={{ style: { fontSize: "1.5rem" } }}
                             InputLabelProps={{ style: { fontSize: "1.4rem" } }}
                         />
-                        {/* No payment proof required for Cash on Delivery */}
                     </div>
                 );
             default:
