@@ -15,10 +15,12 @@ import { AiOutlineClose } from "react-icons/ai";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { cartReset } from "../../features/cart/cartSlice";
 
-// Initialize Stripe
-const stripePromise = loadStripe("pk_test_your_publishable_key_here");
+// Initialize Stripe with direct value
+const stripePromise = loadStripe("pk_test_51RE6d5QR7soFUPBeu2CxSsOHpvsVOu1s4UIEHRPDuQABGsY0JOMsighZtyUIgSWqp0XqVjK3K5i5wAvaOrkD4JLN00BEzrADK3");
 
-// Type definitions
+// API base URL with direct value
+const API_BASE_URL = "http://localhost:5000";
+
 interface Product {
     id: string;
     image: string;
@@ -84,7 +86,7 @@ const shippingOptions = [
 ];
 
 const paymentOptions = [
-    { value: "Stripe", label: "Credit/Debit Card",  detail: "Secure payment via Stripe" },
+    { value: "Stripe", label: "Credit/Debit Card", detail: "Secure payment via Stripe" },
     { value: "Easypaisa", label: "Easypaisa", detail: "Mobile Wallet" },
     { value: "Jazz Cash", label: "Jazz Cash", detail: "Mobile Wallet" },
     { value: "Bank Account Transfer", label: "Bank Account Transfer", detail: "Account No Transfer" },
@@ -116,6 +118,7 @@ const OrderPopup = () => {
     const [step, setStep] = useState(1);
     const [countries, setCountries] = useState<Country[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoadingCountries, setIsLoadingCountries] = useState(false);
     const [error, setError] = useState("");
     const [formData, setFormData] = useState<FormData>(initialFormState);
     const [paymentDetails, setPaymentDetails] = useState<PaymentDetails>(initialPaymentDetails);
@@ -132,14 +135,17 @@ const OrderPopup = () => {
 
     useEffect(() => {
         const fetchCountries = async () => {
+            setIsLoadingCountries(true);
             try {
                 const response = await fetch("https://countriesnow.space/api/v0.1/countries/flag/images");
+                if (!response.ok) throw new Error("Failed to fetch countries");
                 const data = await response.json();
-                if (data?.data) {
-                    setCountries(data.data);
-                }
+                if (data?.data) setCountries(data.data);
             } catch (error) {
                 console.error("Error fetching countries:", error);
+                setError("Failed to load countries. Please try again later.");
+            } finally {
+                setIsLoadingCountries(false);
             }
         };
         fetchCountries();
@@ -164,6 +170,7 @@ const OrderPopup = () => {
         setFileName("");
         setStep(1);
         setOpen(true);
+        setError("");
     };
 
     const handleClose = () => {
@@ -178,31 +185,23 @@ const OrderPopup = () => {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
         const { name, value } = e.target;
-        if (name) {
-            setFormData({ ...formData, [name]: value as string });
-        }
+        if (name) setFormData({ ...formData, [name]: value as string });
     };
 
     const handlePaymentDetailsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setPaymentDetails(prev => ({
             ...prev,
-            details: {
-                ...prev.details,
-                [name]: value
-            }
+            details: { ...prev.details, [name]: value }
         }));
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
+        if (e.target.files?.[0]) {
             const file = e.target.files[0];
             setPaymentDetails(prev => ({
                 ...prev,
-                details: {
-                    ...prev.details,
-                    paymentProof: file
-                }
+                details: { ...prev.details, paymentProof: file }
             }));
             setFileName(file.name);
         }
@@ -211,7 +210,7 @@ const OrderPopup = () => {
     const validateForm = (): boolean => {
         const requiredFields = ['name', 'email', 'address', 'city', 'zip', 'phone', 'country'];
         const missingFields = requiredFields.filter(field => !formData[field as keyof FormData]);
-        
+
         if (missingFields.length > 0) {
             setError(`Please fill in all required fields: ${missingFields.join(', ')}`);
             return false;
@@ -225,18 +224,17 @@ const OrderPopup = () => {
         if (step === 3 && formData.paymentMethod !== "Stripe") {
             const requiredPaymentFields = getRequiredPaymentFields(formData.paymentMethod);
             const missingPaymentFields = requiredPaymentFields.filter(field => {
-                if (field === 'paymentProof') {
-                    return !paymentDetails.details.paymentProof;
-                }
+                if (field === 'paymentProof') return !paymentDetails.details.paymentProof;
                 return !paymentDetails.details[field as keyof typeof paymentDetails.details];
             });
-            
+
             if (missingPaymentFields.length > 0) {
                 setError(`Please fill in all required payment fields: ${missingPaymentFields.join(', ')}`);
                 return false;
             }
         }
 
+        setError("");
         return true;
     };
 
@@ -263,8 +261,9 @@ const OrderPopup = () => {
 
     const handleStripeCheckout = async () => {
         setIsSubmitting(true);
+        setError("");
+        
         try {
-            // Prepare products data for Stripe
             const lineItems = cartItems.map(item => ({
                 price_data: {
                     currency: 'pkr',
@@ -272,40 +271,35 @@ const OrderPopup = () => {
                         name: item.product.title,
                         images: [item.product.image],
                     },
-                    unit_amount: item.product.price * 100, // Stripe uses cents
+                    unit_amount: Math.round(item.product.price * 100),
                 },
                 quantity: item.quantity,
             }));
 
-            const response = await fetch("http://localhost:5000/api/stripe/create-checkout-session", {
+            const response = await fetch(`${API_BASE_URL}/api/stripe/create-checkout-session`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     lineItems,
                     customerEmail: formData.email,
-                    shippingMethod: formData.shippingMethod,
-                    metadata: {
-                        customerName: formData.name,
-                        customerAddress: formData.address,
-                        customerCity: formData.city,
-                        customerCountry: formData.country,
-                        customerZip: formData.zip,
-                        customerPhone: formData.phone,
-                    }
+                    customerName: formData.name
                 }),
             });
 
-            const session = await response.json();
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Failed to create checkout session");
+            }
+
+            const data = await response.json();
             const stripe = await stripePromise;
-            const result = await stripe.redirectToCheckout({
-                sessionId: session.id
+            if (!stripe) throw new Error("Stripe failed to initialize");
+
+            const { error } = await stripe.redirectToCheckout({
+                sessionId: data.id
             });
 
-            if (result.error) {
-                throw new Error(result.error.message);
-            }
+            if (error) throw error;
         } catch (error) {
             console.error("Stripe checkout error:", error);
             setError(error instanceof Error ? error.message : "Failed to process payment");
@@ -317,16 +311,15 @@ const OrderPopup = () => {
     const confirmOrder = async () => {
         if (!validateForm()) return;
         
-        if (formData.paymentMethod === "Stripe") {
-            await handleStripeCheckout();
-            return;
-        }
-
         setIsSubmitting(true);
         setError("");
-        
+
         try {
-            // Prepare products data
+            if (formData.paymentMethod === "Stripe") {
+                await handleStripeCheckout();
+                return;
+            }
+
             const productsData = cartItems.map(item => ({
                 productId: item.product.id,
                 name: item.product.title,
@@ -334,8 +327,7 @@ const OrderPopup = () => {
                 quantity: item.quantity,
                 image: item.product.image
             }));
-            
-            // Prepare order data
+
             const orderData = {
                 customer: {
                     name: formData.name,
@@ -349,7 +341,7 @@ const OrderPopup = () => {
                 products: productsData,
                 shippingMethod: formData.shippingMethod || "Standard",
                 paymentMethod: formData.paymentMethod,
-                paymentStatus: formData.paymentMethod === "Stripe" ? "Pending" : "Unpaid",
+                paymentStatus: "Unpaid",
                 status: "Pending",
                 totalProducts: cartItems.length,
                 totalQuantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
@@ -357,30 +349,25 @@ const OrderPopup = () => {
                 shippingFee: calculateShippingFee(formData.shippingMethod),
                 grandTotal: totalAmount + calculateShippingFee(formData.shippingMethod)
             };
-            
-            // First send the order data
-            const orderResponse = await fetch("http://localhost:5000/api/orders", {
+
+            const orderResponse = await fetch(`${API_BASE_URL}/api/orders`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(orderData),
             });
-            
+
             if (!orderResponse.ok) {
                 const errorData = await orderResponse.json();
                 throw new Error(errorData.message || "Failed to place order");
             }
-            
+
             const orderResponseData = await orderResponse.json();
-            
+
             if (formData.paymentMethod !== "Stripe") {
-                // Prepare FormData for payment details (to include file upload)
                 const paymentFormData = new FormData();
                 paymentFormData.append("method", paymentDetails.method);
                 paymentFormData.append("orderId", orderResponseData.order._id);
-                
-                // Append all payment details
+
                 Object.entries(paymentDetails.details).forEach(([key, value]) => {
                     if (value !== null && value !== undefined) {
                         if (key === "paymentProof" && value instanceof File) {
@@ -390,19 +377,18 @@ const OrderPopup = () => {
                         }
                     }
                 });
-                
-                // Then send the payment details with file
-                const paymentResponse = await fetch("http://localhost:5000/api/payments", {
+
+                const paymentResponse = await fetch(`${API_BASE_URL}/api/payments`, {
                     method: "POST",
                     body: paymentFormData,
                 });
-                
+
                 if (!paymentResponse.ok) {
                     const errorData = await paymentResponse.json();
                     throw new Error(errorData.message || "Failed to process payment");
                 }
             }
-            
+
             setStep(4);
         } catch (error) {
             console.error("Error submitting order:", error);
@@ -411,13 +397,10 @@ const OrderPopup = () => {
             setIsSubmitting(false);
         }
     };
-        
+
     const calculateShippingFee = (method: string): number => {
         const shippingMethod = shippingOptions.find(opt => opt.value === method);
-        if (!shippingMethod) return 0;
-        
-        const priceMatch = shippingMethod.price.match(/\d+/);
-        return priceMatch ? parseInt(priceMatch[0]) : 0;
+        return shippingMethod?.price.match(/\d+/) ? parseInt(shippingMethod.price.match(/\d+/)[0]) : 0;
     };
 
     const renderPaymentDetailsForm = () => {
@@ -428,25 +411,13 @@ const OrderPopup = () => {
                         <h4 className="text-3xl text-neutral-600">Secure Credit/Debit Card Payment</h4>
                         <div className="bg-blue-50 p-6 rounded-xl border border-blue-200">
                             <p className="text-xl text-blue-800 mb-4">
-                                You'll be redirected to Stripe's secure payment page to complete your transaction.
+                                You'll be redirected to Stripe's secure payment page.
                             </p>
                             <div className="flex items-center gap-3">
-                                <img 
-                                    src="https://cdn.worldvectorlogo.com/logos/stripe-4.svg" 
-                                    alt="Stripe" 
-                                    className="h-10"
-                                />
+                                <img src="https://cdn.worldvectorlogo.com/logos/stripe-4.svg" alt="Stripe" className="h-10" />
                                 <div className="flex gap-2">
-                                    <img 
-                                        src="https://cdn.worldvectorlogo.com/logos/visa.svg" 
-                                        alt="Visa" 
-                                        className="h-8"
-                                    />
-                                    <img 
-                                        src="https://cdn.worldvectorlogo.com/logos/mastercard-2.svg" 
-                                        alt="Mastercard" 
-                                        className="h-8"
-                                    />
+                                    <img src="https://cdn.worldvectorlogo.com/logos/visa.svg" alt="Visa" className="h-8" />
+                                    <img src="https://cdn.worldvectorlogo.com/logos/mastercard-2.svg" alt="Mastercard" className="h-8" />
                                 </div>
                             </div>
                         </div>
@@ -458,27 +429,21 @@ const OrderPopup = () => {
                     <div className="space-y-6 mt-8">
                         <h4 className="text-3xl text-neutral-600">{formData.paymentMethod} Details</h4>
                         <TextField
-                            name="mobileNumber"
-                            label="Mobile Number"
-                            fullWidth
+                            name="mobileNumber" label="Mobile Number" fullWidth
                             value={paymentDetails.details.mobileNumber || ""}
                             onChange={handlePaymentDetailsChange}
                             InputProps={{ style: { fontSize: "1.5rem" } }}
                             InputLabelProps={{ style: { fontSize: "1.4rem" } }}
                         />
                         <TextField
-                            name="transactionId"
-                            label="Transaction ID"
-                            fullWidth
+                            name="transactionId" label="Transaction ID" fullWidth
                             value={paymentDetails.details.transactionId || ""}
                             onChange={handlePaymentDetailsChange}
                             InputProps={{ style: { fontSize: "1.5rem" } }}
                             InputLabelProps={{ style: { fontSize: "1.4rem" } }}
                         />
                         <TextField
-                            name="cnic"
-                            label="CNIC"
-                            fullWidth
+                            name="cnic" label="CNIC" fullWidth
                             value={paymentDetails.details.cnic || ""}
                             onChange={handlePaymentDetailsChange}
                             InputProps={{ style: { fontSize: "1.5rem" } }}
@@ -486,24 +451,14 @@ const OrderPopup = () => {
                         />
                         <div className="mt-4">
                             <h5 className="text-2xl mb-2">Payment Proof (Screenshot/Receipt)</h5>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleFileChange}
-                                accept="image/*,.pdf"
-                                style={{ display: 'none' }}
-                            />
+                            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*,.pdf" style={{ display: 'none' }} />
                             <button
-                                variant="contained"
-                                component="span"
-                                onClick={() => fileInputRef.current?.click()}
                                 className="bg-orange-600/30 hover:bg-orange-600/40 hover:text-orange-700 text-orange-600 px-8 py-4 rounded-full text-3xl"
+                                onClick={() => fileInputRef.current?.click()}
                             >
                                 Upload File
                             </button>
-                            {fileName && (
-                                <p className="text-xl mt-2">Selected file: {fileName}</p>
-                            )}
+                            {fileName && <p className="text-xl mt-2">Selected file: {fileName}</p>}
                         </div>
                     </div>
                 );
@@ -513,65 +468,43 @@ const OrderPopup = () => {
                     <div className="space-y-6 mt-8">
                         <h4 className="text-3xl text-neutral-600">Bank Transfer Details</h4>
                         <TextField
-                            name="accountTitle"
-                            label="Account Title"
-                            fullWidth
+                            name="accountTitle" label="Account Title" fullWidth
                             value={paymentDetails.details.accountTitle || ""}
                             onChange={handlePaymentDetailsChange}
                             InputProps={{ style: { fontSize: "1.5rem" } }}
                             InputLabelProps={{ style: { fontSize: "1.4rem" } }}
                         />
                         <TextField
-                            name="bankName"
-                            label="Bank Name"
-                            fullWidth
+                            name="bankName" label="Bank Name" fullWidth
                             value={paymentDetails.details.bankName || ""}
                             onChange={handlePaymentDetailsChange}
                             InputProps={{ style: { fontSize: "1.5rem" } }}
                             InputLabelProps={{ style: { fontSize: "1.4rem" } }}
                         />
                         <TextField
-                            name="senderAccountNumber"
-                            label="Account Number"
-                            fullWidth
+                            name="senderAccountNumber" label="Account Number" fullWidth
                             value={paymentDetails.details.senderAccountNumber || ""}
                             onChange={handlePaymentDetailsChange}
                             InputProps={{ style: { fontSize: "1.5rem" } }}
                             InputLabelProps={{ style: { fontSize: "1.4rem" } }}
                         />
                         <TextField
-                            name="transferDate"
-                            label="Transfer Date"
-                            type="date"
-                            fullWidth
+                            name="transferDate" label="Transfer Date" type="date" fullWidth
                             value={paymentDetails.details.transferDate || ""}
                             onChange={handlePaymentDetailsChange}
-                            InputLabelProps={{ 
-                                style: { fontSize: "1.4rem" },
-                                shrink: true 
-                            }}
+                            InputLabelProps={{ style: { fontSize: "1.4rem" }, shrink: true }}
                             InputProps={{ style: { fontSize: "1.5rem" } }}
                         />
                         <div className="mt-4">
                             <h5 className="text-2xl mb-2">Payment Proof (Screenshot/Receipt)</h5>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleFileChange}
-                                accept="image/*,.pdf"
-                                style={{ display: 'none' }}
-                            />
+                            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*,.pdf" style={{ display: 'none' }} />
                             <button
-                                variant="contained"
-                                component="span"
-                                onClick={() => fileInputRef.current?.click()}
                                 className="bg-orange-600/30 hover:bg-orange-600/40 hover:text-orange-700 text-orange-600 px-8 py-4 rounded-full text-3xl"
+                                onClick={() => fileInputRef.current?.click()}
                             >
                                 Upload File
                             </button>
-                            {fileName && (
-                                <p className="text-xl mt-2">Selected file: {fileName}</p>
-                            )}
+                            {fileName && <p className="text-xl mt-2">Selected file: {fileName}</p>}
                         </div>
                     </div>
                 );
@@ -580,18 +513,14 @@ const OrderPopup = () => {
                     <div className="space-y-6 mt-8">
                         <h4 className="text-3xl text-neutral-600">Delivery Information</h4>
                         <TextField
-                            name="recipientName"
-                            label="Recipient Name"
-                            fullWidth
+                            name="recipientName" label="Recipient Name" fullWidth
                             value={paymentDetails.details.recipientName || ""}
                             onChange={handlePaymentDetailsChange}
                             InputProps={{ style: { fontSize: "1.5rem" } }}
                             InputLabelProps={{ style: { fontSize: "1.4rem" } }}
                         />
                         <TextField
-                            name="deliveryAddress"
-                            label="Delivery Address"
-                            fullWidth
+                            name="deliveryAddress" label="Delivery Address" fullWidth
                             value={paymentDetails.details.deliveryAddress || ""}
                             onChange={handlePaymentDetailsChange}
                             InputProps={{ style: { fontSize: "1.5rem" } }}
@@ -619,11 +548,7 @@ const OrderPopup = () => {
                                         <span className="text-3xl mr-[-8px] bg-black/20 inline-flex items-center justify-center w-12 aspect-square rounded-full text-black">
                                             {index + 1}
                                         </span>
-                                        <img
-                                            src={item.product.image}
-                                            alt={item.product.title}
-                                            className="w-24 h-24 object-cover rounded-lg"
-                                        />
+                                        <img src={item.product.image} alt={item.product.title} className="w-24 h-24 object-cover rounded-lg" />
                                         <div className="flex-1">
                                             <p className="text-3xl font-semibold mb-2">{item.product.title}</p>
                                             <p className="text-2xl text-gray-700">Quantity: {item.quantity}</p>
@@ -668,13 +593,18 @@ const OrderPopup = () => {
                                 value={formData.country}
                                 onChange={handleInputChange}
                                 style={{ fontSize: "1.7rem", boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)" }}
+                                disabled={isLoadingCountries}
                             >
-                                {countries.map((country) => (
-                                    <MenuItem key={country.name} value={country.name} style={{ fontSize: "1.8rem" }}>
-                                        <img src={country.flag} alt={country.name} style={{ width: "35px", marginRight: "15px" }} />
-                                        {country.name}
-                                    </MenuItem>
-                                ))}
+                                {isLoadingCountries ? (
+                                    <MenuItem value="" style={{ fontSize: "1.8rem" }}>Loading countries...</MenuItem>
+                                ) : (
+                                    countries.map((country) => (
+                                        <MenuItem key={country.name} value={country.name} style={{ fontSize: "1.8rem" }}>
+                                            <img src={country.flag} alt={country.name} style={{ width: "35px", marginRight: "15px" }} />
+                                            {country.name}
+                                        </MenuItem>
+                                    ))
+                                )}
                             </Select>
                         </FormControl>
                     </div>
