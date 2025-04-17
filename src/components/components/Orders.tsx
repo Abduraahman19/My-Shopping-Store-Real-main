@@ -159,23 +159,24 @@ const UserOrdersPopup: React.FC = () => {
 
   const getStatusColor = (status: Order['status']) => {
     switch (status) {
-      case 'Delivered': return 'bg-green-100 text-green-600';
-      case 'Shipped': return 'bg-blue-100 text-blue-600';
-      case 'Processing': return 'bg-orange-100 text-orange-600';
-      case 'Cancelled': return 'bg-red-100 text-red-600';
-      default: return 'bg-yellow-100 text-yellow-600';
+      case 'Delivered': return 'bg-green-600/25 text-green-600';
+      case 'Shipped': return 'bg-blue-600/25 text-blue-600';
+      case 'Processing': return 'bg-orange-600/25 text-orange-600';
+      case 'Cancelled': return 'bg-red-600/25 text-red-600';
+      default: return 'bg-yellow-600/25 text-yellow-600';
     }
   };
 
   const getPaymentStatusColor = (status: Order['paymentStatus']) => {
     switch (status) {
-      case 'Paid': return 'text-green-600';
-      case 'Unpaid': return 'text-red-600';
-      case 'Failed': return 'text-red-600';
-      case 'Refunded': return 'text-purple-600';
-      default: return 'text-yellow-600';
+      case 'Paid':return 'bg-green-600/25 text-green-600';
+      case 'Unpaid':return 'bg-red-600/25 text-red-600';
+      case 'Failed':return 'bg-red-600/25 text-red-600';
+      case 'Refunded':return 'bg-purple-600/25 text-purple-600';
+      default:return 'bg-yellow-600/25 text-yellow-600';
     }
   };
+  
 
   return (
     <div>
@@ -330,16 +331,22 @@ const UserOrdersPopup: React.FC = () => {
                         <div className="flex items-center space-x-4 sm:space-x-6">
                           <div className="flex items-center space-x-2">
                             {getStatusIcon(order.status)}
-                            <span className={`text-sm sm:text-lg font-extrabold ${getStatusColor(order.status)}`}>
+                            <span
+                              className={`text-sm sm:text-lg px-2 py-1 rounded-lg font-extrabold ${getStatusColor(order.status)}`}
+                            >
                               {order.status}
                             </span>
                           </div>
+
                           <div className="hidden sm:flex items-center space-x-2">
                             {getPaymentStatusIcon(order.paymentStatus)}
-                            <span className={`text-sm sm:text-lg font-extrabold ${getPaymentStatusColor(order.paymentStatus)}`}>
+                            <span
+                              className={`text-sm sm:text-lg px-2 py-1 rounded-lg font-extrabold ${getPaymentStatusColor(order.paymentStatus)}`}
+                            >
                               {order.paymentStatus}
                             </span>
                           </div>
+
                           <div className="text-lg sm:text-2xl font-extrabold text-gray-700">
                             Rs.{order.grandTotal.toLocaleString()}
                           </div>
@@ -453,7 +460,7 @@ const UserOrdersPopup: React.FC = () => {
                                     </p>
                                     <p>
                                       <span className="font-extrabold text-gray-600">ZipCode:</span>{' '}
-                                      <span className='font-bold text-neutral-600'>{order.customer.zip}</span>
+                                      <span className='font-bold text-neutral-600'>{order.customer.zipCode}</span>
                                     </p>
                                   </div>
                                 </motion.div>
@@ -484,6 +491,7 @@ const UserOrdersPopup: React.FC = () => {
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             transition={{ duration: 0.3 }}
+                                            className="divide-x divide-gray-300" // 🔥 Adds vertical lines between columns
                                           >
                                             <td className="px-4 py-3 whitespace-nowrap">
                                               <img
@@ -492,13 +500,22 @@ const UserOrdersPopup: React.FC = () => {
                                                 className="h-16 w-16 object-cover rounded-lg border"
                                               />
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-xl font-bold text-gray-700">{product.name}</td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-xl font-bold text-gray-600">{product.quantity}</td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-xl font-bold text-gray-500">Rs.{product.price.toLocaleString()}</td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-xl font-bold text-gray-700">Rs.{product.totalPrice.toLocaleString()}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-xl font-bold text-gray-700">
+                                              {product.name}
+                                            </td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-xl font-bold text-gray-600">
+                                              {product.quantity}
+                                            </td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-xl font-bold text-gray-500">
+                                              Rs.{product.price.toLocaleString()}
+                                            </td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-xl font-bold text-gray-700">
+                                              Rs.{product.totalPrice.toLocaleString()}
+                                            </td>
                                           </motion.tr>
                                         ))}
                                       </tbody>
+
                                     </table>
                                   </div>
 

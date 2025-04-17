@@ -211,7 +211,7 @@
 //     const validateForm = (): boolean => {
 //         const requiredFields = ['name', 'email', 'address', 'city', 'zip', 'phone', 'country'];
 //         const missingFields = requiredFields.filter(field => !formData[field as keyof FormData]);
-        
+
 //         if (missingFields.length > 0) {
 //             setError(`Please fill in all required fields: ${missingFields.join(', ')}`);
 //             return false;
@@ -230,7 +230,7 @@
 //                 }
 //                 return !paymentDetails.details[field as keyof typeof paymentDetails.details];
 //             });
-            
+
 //             if (missingPaymentFields.length > 0) {
 //                 setError(`Please fill in all required payment fields: ${missingPaymentFields.join(', ')}`);
 //                 return false;
@@ -316,7 +316,7 @@
 
 //     const confirmOrder = async () => {
 //         if (!validateForm()) return;
-        
+
 //         if (formData.paymentMethod === "Stripe") {
 //             await handleStripeCheckout();
 //             return;
@@ -324,7 +324,7 @@
 
 //         setIsSubmitting(true);
 //         setError("");
-        
+
 //         try {
 //             // Prepare products data
 //             const productsData = cartItems.map(item => ({
@@ -334,7 +334,7 @@
 //                 quantity: item.quantity,
 //                 image: item.product.image
 //             }));
-            
+
 //             // Prepare order data
 //             const orderData = {
 //                 customer: {
@@ -357,7 +357,7 @@
 //                 shippingFee: calculateShippingFee(formData.shippingMethod),
 //                 grandTotal: totalAmount + calculateShippingFee(formData.shippingMethod)
 //             };
-            
+
 //             // First send the order data
 //             const orderResponse = await fetch("http://localhost:5000/api/orders", {
 //                 method: "POST",
@@ -366,20 +366,20 @@
 //                 },
 //                 body: JSON.stringify(orderData),
 //             });
-            
+
 //             if (!orderResponse.ok) {
 //                 const errorData = await orderResponse.json();
 //                 throw new Error(errorData.message || "Failed to place order");
 //             }
-            
+
 //             const orderResponseData = await orderResponse.json();
-            
+
 //             if (formData.paymentMethod !== "Stripe") {
 //                 // Prepare FormData for payment details (to include file upload)
 //                 const paymentFormData = new FormData();
 //                 paymentFormData.append("method", paymentDetails.method);
 //                 paymentFormData.append("orderId", orderResponseData.order._id);
-                
+
 //                 // Append all payment details
 //                 Object.entries(paymentDetails.details).forEach(([key, value]) => {
 //                     if (value !== null && value !== undefined) {
@@ -390,19 +390,19 @@
 //                         }
 //                     }
 //                 });
-                
+
 //                 // Then send the payment details with file
 //                 const paymentResponse = await fetch("http://localhost:5000/api/payments", {
 //                     method: "POST",
 //                     body: paymentFormData,
 //                 });
-                
+
 //                 if (!paymentResponse.ok) {
 //                     const errorData = await paymentResponse.json();
 //                     throw new Error(errorData.message || "Failed to process payment");
 //                 }
 //             }
-            
+
 //             setStep(4);
 //         } catch (error) {
 //             console.error("Error submitting order:", error);
@@ -411,11 +411,11 @@
 //             setIsSubmitting(false);
 //         }
 //     };
-        
+
 //     const calculateShippingFee = (method: string): number => {
 //         const shippingMethod = shippingOptions.find(opt => opt.value === method);
 //         if (!shippingMethod) return 0;
-        
+
 //         const priceMatch = shippingMethod.price.match(/\d+/);
 //         return priceMatch ? parseInt(priceMatch[0]) : 0;
 //     };
@@ -1063,7 +1063,7 @@ const OrderPopup = () => {
     const validateForm = (): boolean => {
         const requiredFields = ['name', 'email', 'address', 'city', 'zip', 'phone', 'country'];
         const missingFields = requiredFields.filter(field => !formData[field as keyof FormData]);
-        
+
         if (missingFields.length > 0) {
             setError(`Please fill in all required fields: ${missingFields.join(', ')}`);
             return false;
@@ -1082,7 +1082,7 @@ const OrderPopup = () => {
                 }
                 return !paymentDetails.details[field as keyof typeof paymentDetails.details];
             });
-            
+
             if (missingPaymentFields.length > 0) {
                 setError(`Please fill in all required payment fields: ${missingPaymentFields.join(', ')}`);
                 return false;
@@ -1121,7 +1121,7 @@ const OrderPopup = () => {
         if (!validateForm()) return;
         setIsSubmitting(true);
         setError("");
-        
+
         try {
             // Prepare products data with images
             const productsData = cartItems.map(item => ({
@@ -1131,7 +1131,7 @@ const OrderPopup = () => {
                 quantity: item.quantity,
                 image: item.product.image // ✅ Including image in order data
             }));
-            
+
             // Prepare order data
             const orderData = {
                 customer: {
@@ -1154,7 +1154,7 @@ const OrderPopup = () => {
                 shippingFee: calculateShippingFee(formData.shippingMethod),
                 grandTotal: totalAmount + calculateShippingFee(formData.shippingMethod)
             };
-            
+
             // First send the order data
             const orderResponse = await fetch("http://localhost:5000/api/orders", {
                 method: "POST",
@@ -1163,19 +1163,19 @@ const OrderPopup = () => {
                 },
                 body: JSON.stringify(orderData),
             });
-            
+
             if (!orderResponse.ok) {
                 const errorData = await orderResponse.json();
                 throw new Error(errorData.message || "Failed to place order");
             }
-            
+
             const orderResponseData = await orderResponse.json();
-            
+
             // Prepare FormData for payment details (to include file upload)
             const paymentFormData = new FormData();
             paymentFormData.append("method", paymentDetails.method);
             paymentFormData.append("orderId", orderResponseData.order._id);
-            
+
             // Append all payment details
             Object.entries(paymentDetails.details).forEach(([key, value]) => {
                 if (value !== null && value !== undefined) {
@@ -1186,18 +1186,18 @@ const OrderPopup = () => {
                     }
                 }
             });
-            
+
             // Then send the payment details with file
             const paymentResponse = await fetch("http://localhost:5000/api/payments", {
                 method: "POST",
                 body: paymentFormData,
             });
-            
+
             if (!paymentResponse.ok) {
                 const errorData = await paymentResponse.json();
                 throw new Error(errorData.message || "Failed to process payment");
             }
-            
+
             setStep(4);
         } catch (error) {
             console.error("Error submitting order:", error);
@@ -1206,11 +1206,11 @@ const OrderPopup = () => {
             setIsSubmitting(false);
         }
     };
-        
+
     const calculateShippingFee = (method: string): number => {
         const shippingMethod = shippingOptions.find(opt => opt.value === method);
         if (!shippingMethod) return 0;
-        
+
         const priceMatch = shippingMethod.price.match(/\d+/);
         return priceMatch ? parseInt(priceMatch[0]) : 0;
     };
@@ -1387,9 +1387,9 @@ const OrderPopup = () => {
                             fullWidth
                             value={paymentDetails.details.transferDate || ""}
                             onChange={handlePaymentDetailsChange}
-                            InputLabelProps={{ 
+                            InputLabelProps={{
                                 style: { fontSize: "1.4rem" },
-                                shrink: true 
+                                shrink: true
                             }}
                             InputProps={{ style: { fontSize: "1.5rem" } }}
                         />
@@ -1586,19 +1586,20 @@ const OrderPopup = () => {
         <div>
             <button
                 onClick={openPopup}
-                className="bg-orange-600 py-5 px-28 rounded-full hover:text-white text-[#b4b2b2]"
+                className={`bg-orange-600/85 py-4 text-2xl my-3 px-8 hover:shadow-md hover:shadow-black rounded-full text-white transition-all duration-200 ease-in-out transform hover:bg-orange-600/95 hover:scale-105 active:scale-95 active:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed`}
                 disabled={cartItems.length === 0}
             >
                 {cartItems.length === 0 ? "Cart is Empty" : "Place Order"}
             </button>
 
+
             <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
                 <div className="bg-[#FEEBF8] text-white pl-5 flex justify-between items-center">
                     <h2 className="text-5xl text-[#9b9b9b] py-5">
-                        {step === 1 ? "Order Summary" : 
-                         step === 2 ? "User Information" : 
-                         step === 3 ? "Shipping & Payment" : 
-                         "Order Confirmation"}
+                        {step === 1 ? "Order Summary" :
+                            step === 2 ? "User Information" :
+                                step === 3 ? "Shipping & Payment" :
+                                    "Order Confirmation"}
                     </h2>
                     <div onClick={handleClose} className="hover:bg-red-600 cursor-pointer text-black hover:text-white transition duration-300 h-24 w-24 flex items-center justify-center">
                         <AiOutlineClose className="text-4xl" />
@@ -1616,8 +1617,8 @@ const OrderPopup = () => {
 
                 <DialogActions className="bg-gray-100 px-5 py-3">
                     {step > 1 && step < 4 && (
-                        <button 
-                            onClick={() => setStep(step - 1)} 
+                        <button
+                            onClick={() => setStep(step - 1)}
                             className="text-4xl bg-black text-orange-600 rounded-full py-4 px-8"
                             disabled={isSubmitting}
                         >
@@ -1625,16 +1626,16 @@ const OrderPopup = () => {
                         </button>
                     )}
                     {step < 3 ? (
-                        <button 
-                            onClick={() => setStep(step + 1)} 
+                        <button
+                            onClick={() => setStep(step + 1)}
                             className="text-4xl py-4 bg-black text-orange-600 rounded-full px-8"
                             disabled={isSubmitting}
                         >
                             Next
                         </button>
                     ) : step === 3 ? (
-                        <button 
-                            onClick={confirmOrder} 
+                        <button
+                            onClick={confirmOrder}
                             className="text-4xl py-4 bg-black text-orange-600 rounded-full px-8 flex items-center justify-center gap-4"
                             disabled={isSubmitting}
                         >
@@ -1646,8 +1647,8 @@ const OrderPopup = () => {
                             ) : "Confirm"}
                         </button>
                     ) : (
-                        <button 
-                            onClick={handleClose} 
+                        <button
+                            onClick={handleClose}
                             className="text-4xl bg-black text-orange-600 rounded-full py-4 px-8"
                         >
                             Close
