@@ -1477,7 +1477,7 @@ const OrderPopup = () => {
                                 ))}
                                 <div className="mt-12 border-t pt-8">
                                     <h3 className="text-4xl mb-6">Total Amount:</h3>
-                                    <p className="text-5xl text-green-600 px-5 py-2 bg-green-600/30 rounded-full w-96">
+                                    <p className="text-5xl text-green-600 px-[16px] py-2 bg-green-600/30 rounded-full w-96">
                                         Rs. {totalAmount.toFixed(2)}
                                     </p>
                                 </div>

@@ -2,6 +2,8 @@ import { Navigate, createBrowserRouter } from "react-router-dom";
 import App from "../App";
 import { Cart, Catalog, Home, Product } from "../pages";
 import LoginPage from "../pages/Login";
+import Cancel from "../components/components/Cancel";
+import Success from "../components/components/Success";
 
 export const router = createBrowserRouter([
   {
@@ -43,6 +45,14 @@ export const router = createBrowserRouter([
         path: "*",
         element: <Navigate to="/" />,
       },
+      {
+        path: "/success",
+        element: <Success />,
+      },
+      {
+        path: "/cancel",
+        element: <Cancel />,
+      }
     ],
   },
 ]);

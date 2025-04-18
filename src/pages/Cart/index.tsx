@@ -13,13 +13,15 @@ import { TbTruckReturn } from "react-icons/tb";
 import Spinner from "../../components/components/Spinner";
 import OrderPopup from "../../components/components/orderPopup";
 import { loadStripe } from "@stripe/stripe-js";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
-// Define types
 interface Product {
   id: string;
   title: string;
   image: string;
   price: number;
+  description?: string;
 }
 
 interface CartItem {
@@ -28,30 +30,80 @@ interface CartItem {
 }
 
 const Cart = () => {
-  const { cartItems, isLoading } = useAppSelector((state: {
-    cart: {
-      cartItems: CartItem[];
-      isLoading: boolean;
-    };
-  }) => state.cart);
-
+  const { cartItems, isLoading } = useAppSelector((state) => state.cart);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const [isProcessing, setIsProcessing] = useState(false);
 
+  // Calculate total price
   const totalPrice = cartItems.reduce(
     (acc, item) => acc + item.quantity * item.product.price,
     0
   );
 
-  // Payment Integration
+  // Clean product data before sending to Stripe
+  const cleanProductData = (products: CartItem[]) => {
+    return products.map(item => ({
+      ...item,
+      product: {
+        ...item.product,
+        image: item.product.image 
+          ? encodeURI(item.product.image.replace(/[^\x00-\x7F]/g, ""))
+          : "",
+        price: Number(item.product.price) || 0,
+        description: item.product.description 
+          ? item.product.description.substring(0, 200)
+          : ""
+      }
+    }));
+  };
+
+  // Handle payment processing
   const makePayment = async () => {
-    const stripe = await loadStripe("pk_test_51RE6d5QR7soFUPBeu2CxSsOHpvsVOu1s4UIEHRPDuQABGsY0JOMsighZtyUIgSWqp0XqVjK3K5i5wAvaOrkD4JLN00BEzrADK3");
-    // TODO: Add Stripe session and redirect logic
-    if (!stripe) {
-      console.error("Stripe failed to load.");
-      return;
+    setIsProcessing(true);
+    
+    try {
+      const stripe = await loadStripe("pk_test_51RE6d5QR7soFUPBeu2CxSsOHpvsVOu1s4UIEHRPDuQABGsY0JOMsighZtyUIgSWqp0XqVjK3K5i5wAvaOrkD4JLN00BEzrADK3");
+      
+      if (!stripe) {
+        throw new Error("Stripe failed to initialize");
+      }
+
+      const cleanedProducts = cleanProductData(cartItems);
+      const body = {
+        products: cleanedProducts,
+        totalPrice: totalPrice
+      };
+
+      const response = await fetch("http://localhost:5000/api/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Payment failed");
+      }
+
+      const { sessionId } = await response.json();
+
+      const result = await stripe.redirectToCheckout({
+        sessionId: sessionId
+      });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+    } catch (error) {
+      console.error("Payment Error:", error);
+      toast.error(error.message || "Payment processing failed");
+    } finally {
+      setIsProcessing(false);
     }
-    // Proceed with backend call to create a checkout session
   };
 
   if (isLoading) return <Spinner />;
@@ -65,7 +117,8 @@ const Cart = () => {
           </Button>
           <div className={styles.title}>Shopping Bag</div>
         </div>
-        {cartItems.length ? (
+
+        {cartItems.length > 0 ? (
           <div className={styles.content}>
             <div className={styles.cartLeft}>
               {cartItems.map((item) => (
@@ -78,6 +131,9 @@ const Cart = () => {
                       src={item.product.image}
                       className="w-80 h-80 rounded-3xl"
                       alt={item.product.title}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/placeholder-product.png";
+                      }}
                     />
                     <div className={styles.cartCardDetails}>
                       <div className={styles.cartCardLeft}>
@@ -85,11 +141,7 @@ const Cart = () => {
                           {item.product.title}
                         </div>
                         <div className="text-4xl w-screen max-w-80 mb-10">
-                          Rs.{" "}
-                          {new Intl.NumberFormat("en-US", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          }).format(item.product.price)}
+                          Rs. {item.product.price.toFixed(2)}
                         </div>
                         <div className="w-screen flex gap-2 font-bold text-4xl">
                           <div className={styles.iconContainer}>
@@ -110,31 +162,27 @@ const Cart = () => {
                       </div>
                     </div>
                   </Link>
+
                   <div className={styles.cartCardRight}>
                     <div className={styles.cartCardRightWrapper}>
                       <Button
                         className={styles.button}
-                        onClick={() =>
-                          dispatch(reduceItemFromCart(item.product))
-                        }
+                        onClick={() => dispatch(reduceItemFromCart(item.product))}
+                        disabled={item.quantity <= 1}
                       >
                         -
                       </Button>
                       <div className={styles.counter}>{item.quantity}</div>
                       <Button
                         className={styles.button}
-                        onClick={() =>
-                          dispatch(incrementItemFromCart(item.product))
-                        }
+                        onClick={() => dispatch(incrementItemFromCart(item.product))}
                       >
                         +
                       </Button>
                     </div>
                     <Button
                       className="text-4xl py-5 pl-28 hover:text-red-600"
-                      onClick={() =>
-                        dispatch(removeItemFromCart(item.product.id))
-                      }
+                      onClick={() => dispatch(removeItemFromCart(item.product.id))}
                     >
                       <MdDelete className={styles.icon} />
                     </Button>
@@ -142,6 +190,7 @@ const Cart = () => {
                 </div>
               ))}
             </div>
+
             <div className={styles.cartRight}>
               <div className={styles.coupon}>
                 <div className={styles.title}>Coupons</div>
@@ -153,13 +202,12 @@ const Cart = () => {
                   <Button className={styles.button}>Apply</Button>
                 </div>
               </div>
+
               <div className={styles.priceDetails}>
                 <div className={styles.title}>Price Details</div>
                 <div className={styles.priceContent}>
                   <div className={styles.title}>Total MRP</div>
-                  <div className={styles.price}>
-                    Rs {totalPrice.toFixed(2)}
-                  </div>
+                  <div className={styles.price}>Rs {totalPrice.toFixed(2)}</div>
                 </div>
                 <div className={styles.priceContent}>
                   <div className={styles.title}>Platform Fee</div>
@@ -170,6 +218,7 @@ const Cart = () => {
                   <div className={styles.price}>FREE</div>
                 </div>
               </div>
+
               <div className={styles.totalContent}>
                 <div className="flex flex-col items-center gap-4 justify-center">
                   <div className="flex items-center gap-4 justify-center">
@@ -177,11 +226,7 @@ const Cart = () => {
                       <div className={styles.title}>Total Amount</div>
                     </div>
                     <div className="mt-[-14px] text-3xl">
-                      Rs.{" "}
-                      {new Intl.NumberFormat("en-US", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      }).format(totalPrice)}
+                      Rs. {totalPrice.toFixed(2)}
                     </div>
                   </div>
                   <Link
@@ -195,10 +240,10 @@ const Cart = () => {
                     <Button
                       className="bg-orange-600/85 py-4 text-2xl my-3 hover:shadow-md hover:shadow-black px-8 rounded-full text-white transition-all duration-200 ease-in-out transform hover:bg-orange-600/95 hover:scale-105 active:scale-95 active:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
                       onClick={makePayment}
+                      disabled={isProcessing || cartItems.length === 0}
                     >
-                      {cartItems.length === 0
-                        ? "Cart is Empty"
-                        : "Pay With Stripe"}
+                      {isProcessing ? "Processing..." : 
+                       cartItems.length === 0 ? "Cart is Empty" : "Pay With Stripe"}
                     </Button>
                   </div>
                 </div>
